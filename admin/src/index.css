@@ -1,0 +1,135 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-gold: #c9a962;
+  --color-gold-dark: #a88b4a;
+  --color-surface: #0f0f0f;
+  --color-surface-2: #1a1a1a;
+  --color-surface-3: #242424;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-fg: #ffffff;
+  --color-muted: rgba(255, 255, 255, 0.55);
+  --color-subtle: rgba(255, 255, 255, 0.35);
+}
+
+html.light {
+  --color-surface: #f4f3ef;
+  --color-surface-2: #ffffff;
+  --color-surface-3: #eceae4;
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-fg: #1a1a1a;
+  --color-muted: rgba(0, 0, 0, 0.55);
+  --color-subtle: rgba(0, 0, 0, 0.4);
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.light {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-fg);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  scrollbar-width: thin;
+}
+
+.card {
+  @apply rounded-xl border p-4 shadow-sm;
+  border-color: var(--color-border);
+  background: var(--color-surface-2);
+}
+
+.btn-primary {
+  @apply rounded-lg bg-gold px-4 py-2 text-sm font-medium text-black transition hover:bg-gold-dark disabled:opacity-50;
+}
+
+.btn-ghost {
+  @apply rounded-lg px-3 py-2 text-sm transition;
+  color: var(--color-fg);
+}
+
+.btn-ghost:hover {
+  background: color-mix(in srgb, var(--color-fg) 8%, transparent);
+}
+
+.input {
+  @apply w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-gold;
+  border-color: var(--color-border);
+  background: var(--color-surface-3);
+  color: var(--color-fg);
+}
+
+.input option {
+  background: var(--color-surface-2);
+  color: var(--color-fg);
+}
+
+.table-th {
+  @apply px-3 py-3 text-left text-xs font-medium uppercase tracking-wider sm:px-4;
+  color: var(--color-muted);
+}
+
+.table-td {
+  @apply px-3 py-3 text-sm sm:px-4;
+  color: var(--color-fg);
+}
+
+.page-header {
+  @apply mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between;
+}
+
+.page-title {
+  @apply text-xl font-light sm:text-2xl;
+}
+
+.toolbar {
+  @apply flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap;
+}
+
+.badge {
+  @apply inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+
+.text-muted {
+  color: var(--color-muted);
+}
+
+.text-subtle {
+  color: var(--color-subtle);
+}
+
+.surface-hover:hover {
+  background: color-mix(in srgb, var(--color-fg) 4%, transparent);
+}
+
+.row-border {
+  border-color: var(--color-border);
+}
+
+@keyframes slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.toast-enter {
+  animation: slide-in 0.3s ease-out;
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stat-animate {
+  animation: count-up 0.4s ease-out;
+}

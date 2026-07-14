@@ -1,0 +1,68 @@
+import { useTranslation } from 'react-i18next'
+
+const shopLinkKeys = ['necklaces', 'rings', 'giftSets'] as const
+
+export default function Footer() {
+  const { t } = useTranslation()
+
+  const supportLinks = [
+    { label: t('footer.jewelryCare'), href: '#care' },
+    { label: t('footer.faq'), href: '#care' },
+    { label: t('footer.instagram'), href: 'https://instagram.com/marea.jewelryyy' },
+  ]
+
+  return (
+    <footer className="border-t border-marea-border bg-marea-bg-soft py-16">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="grid gap-12 md:grid-cols-4">
+          <div className="md:col-span-2">
+            <p className="font-serif text-2xl font-semibold tracking-[0.3em] text-marea-cream">
+              MAREA
+            </p>
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-marea-muted">
+              {t('footer.tagline')}
+            </p>
+          </div>
+
+          <div>
+            <p className="section-label mb-4">{t('footer.shop')}</p>
+            <ul className="space-y-3">
+              {shopLinkKeys.map((key) => (
+                <li key={key}>
+                  <a
+                    href="#collections"
+                    className="text-sm text-marea-muted transition-colors hover:text-marea-gold"
+                  >
+                    {t(`categories.${key}`)}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <p className="section-label mb-4">{t('footer.support')}</p>
+            <ul className="space-y-3">
+              {supportLinks.map((link) => (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    target={link.href.startsWith('http') ? '_blank' : undefined}
+                    rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                    className="text-sm text-marea-muted transition-colors hover:text-marea-gold"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-16 border-t border-marea-border pt-8 text-center text-xs text-marea-muted">
+          {t('footer.copyright')}
+        </div>
+      </div>
+    </footer>
+  )
+}

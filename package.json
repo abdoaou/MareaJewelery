@@ -1,0 +1,26 @@
+{
+  "name": "marea-jewelry",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "api",
+    "website",
+    "admin"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:website\" \"npm run dev:admin\"",
+    "dev:api": "npm run dev -w api",
+    "dev:website": "npm run dev -w website",
+    "dev:admin": "npm run dev -w admin",
+    "build": "npm run build -w website && npm run build -w admin",
+    "install:all": "npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1079.0",
+    "multer": "^2.2.0",
+    "uuid": "^14.0.1"
+  }
+}

@@ -1,0 +1,332 @@
+{
+  "nav": {
+    "shop": "Shop",
+    "bestSellers": "Best Sellers",
+    "story": "Story",
+    "care": "Care",
+    "cart": "Cart",
+    "login": "Sign In",
+    "register": "Register",
+    "logout": "Logout",
+    "language": "Language",
+    "theme": "Theme",
+    "orders": "Track Orders",
+    "likes": "Likes"
+  },
+  "hero": {
+    "label": "Handcrafted fine jewelry",
+    "title": "Timeless Jewelry Designed to",
+    "titleHighlight": "Shine Forever.",
+    "subtitle": "Discover handcrafted jewelry that celebrates elegance, beauty, and unforgettable moments.",
+    "shopCollection": "Shop Collection",
+    "newArrivals": "Explore New Arrivals",
+    "dragToRotate": "Drag to rotate",
+    "stat1Value": "18k",
+    "stat1Label": "Gold vermeil finish",
+    "stat2Value": "4.9★",
+    "stat2Label": "Loved by Marea clients"
+  },
+  "sections": {
+    "collections": {
+      "label": "Collections",
+      "title": "A curated world of gold, pearl, and light.",
+      "subtitle": "Explore signature categories designed for gifting, ceremony, and everyday elegance.",
+      "viewMore": "View more"
+    },
+    "bestSellers": {
+      "label": "Best Sellers",
+      "title": "Loved pieces, made for unforgettable rituals.",
+      "viewAll": "View All"
+    },
+    "newArrivals": {
+      "label": "New Arrivals",
+      "title": "Fresh silhouettes with a soft golden glow."
+    },
+    "shopByCategory": {
+      "label": "Shop by Category",
+      "title": "Find the piece that follows your light.",
+      "subtitle": "From quiet daily shine to heirloom-inspired sets, each collection is edited for clarity, wearability, and emotional value."
+    },
+    "promise": {
+      "label": "The Marea Promise",
+      "title": "Luxury is not loud.",
+      "titleHighlight": "It is felt in every detail.",
+      "body": "Every Marea piece is made to balance modern minimalism with the emotion of heirloom jewelry — refined enough for ceremony, effortless enough for every day."
+    },
+    "whyChoose": {
+      "label": "Why Choose Marea",
+      "title": "Jewelry crafted for confidence, memory, and quiet radiance."
+    },
+    "testimonials": {
+      "label": "From Instagram",
+      "title": "Styled by the Marea muse.",
+      "tagline": "The kind of jewelry people notice quietly.",
+      "handle": "@marea.jewelryyy"
+    },
+    "care": {
+      "label": "Jewelry Care",
+      "title": "Keep every piece luminous for longer.",
+      "subtitle": "Store separately, avoid water and perfume, polish gently, and give your jewelry moments of rest between wears."
+    },
+    "newsletter": {
+      "label": "Join the private Marea list.",
+      "title": "Receive new collection previews, styling notes, and limited gift edits before anyone else.",
+      "placeholder": "Your email address",
+      "subscribe": "Subscribe",
+      "thanks": "Thank you for joining the Marea list."
+    }
+  },
+  "categories": {
+    "necklaces": "Necklaces",
+    "bracelets": "Bracelets",
+    "rings": "Rings",
+    "earrings": "Earrings",
+    "giftSets": "Gift Sets"
+  },
+  "collections": {
+    "necklaces": {
+      "title": "Necklaces",
+      "description": "Fine chains, pendants, and signature layers for luminous everyday rituals."
+    },
+    "bracelets": {
+      "title": "Bracelets",
+      "description": "Delicate gold silhouettes crafted to move with light."
+    },
+    "rings": {
+      "title": "Rings",
+      "description": "Sculptural bands and diamond accents made for forever moments."
+    },
+    "earrings": {
+      "title": "Earrings",
+      "description": "Polished studs, hoops, and drops for refined sparkle."
+    },
+    "giftSets": {
+      "title": "Gift Sets",
+      "description": "Curated pieces wrapped for anniversaries, weddings, and milestones."
+    }
+  },
+  "products": {
+    "aurora-ring": {
+      "name": "Aurora Diamond Ring",
+      "description": "18k gold vermeil · zirconia"
+    },
+    "luna-bracelet": {
+      "name": "Luna Pearl Bracelet",
+      "description": "Freshwater pearl · gold vermeil"
+    },
+    "noor-gift-set": {
+      "name": "Noor Gift Set",
+      "description": "Necklace + bracelet set"
+    },
+    "sera-necklace": {
+      "name": "Sera Gold Necklace",
+      "description": "Gold-plated sterling silver"
+    },
+    "mira-earrings": {
+      "name": "Mira Pavé Earrings",
+      "description": "Sterling silver · pavé stones"
+    },
+    "celine-band": {
+      "name": "Celine Stacking Band",
+      "description": "Polished gold vermeil"
+    }
+  },
+  "badges": {
+    "bestSeller": "Best Seller",
+    "limited": "Limited",
+    "giftSet": "Gift Set",
+    "new": "New",
+    "giftPick": "Gift Pick",
+    "featured": "Featured"
+  },
+  "whyChooseItems": {
+    "0": {
+      "title": "Hand-finished details",
+      "description": "Each piece is selected and finished with a focus on balance, comfort, and enduring shine."
+    },
+    "1": {
+      "title": "Premium materials",
+      "description": "Gold vermeil, sterling silver, pearls, and brilliant stones are chosen for refined everyday wear."
+    },
+    "2": {
+      "title": "Gift-ready experience",
+      "description": "Elegant presentation and thoughtful details make every order feel personal and memorable."
+    }
+  },
+  "testimonials": {
+    "0": {
+      "quote": "The ring feels delicate but premium. It arrived beautifully packaged and instantly became my everyday piece.",
+      "author": "Rana M."
+    },
+    "1": {
+      "quote": "I bought the gift set for my sister. The whole experience felt like a luxury boutique.",
+      "author": "Lina A."
+    },
+    "2": {
+      "quote": "Minimal, elegant, and not overdone. Exactly the international luxury feel I wanted.",
+      "author": "Maya K."
+    }
+  },
+  "faqs": {
+    "0": {
+      "question": "Are Marea pieces gift-ready?",
+      "answer": "Yes. Every piece arrives in elegant packaging with a soft pouch and care card — ready to gift without extra wrapping."
+    },
+    "1": {
+      "question": "How do I protect the gold finish?",
+      "answer": "Avoid water, perfume, and harsh chemicals. Store pieces separately and polish gently with a soft cloth between wears."
+    },
+    "2": {
+      "question": "Do you offer pieces for special occasions?",
+      "answer": "Our gift sets and signature collections are curated for weddings, anniversaries, and milestone moments."
+    }
+  },
+  "footer": {
+    "tagline": "Handcrafted jewelry for the moments you keep forever — luminous, intentional, and made to be passed on.",
+    "shop": "Shop",
+    "support": "Support",
+    "jewelryCare": "Jewelry Care",
+    "faq": "FAQ",
+    "instagram": "Instagram",
+    "copyright": "© 2026 Marea Jewelry. All rights reserved."
+  },
+  "cart": {
+    "title": "Your Cart",
+    "empty": "Your cart is empty",
+    "checkout": "Proceed to Checkout",
+    "remove": "Remove",
+    "increase": "Increase quantity",
+    "decrease": "Decrease quantity",
+    "total": "Total",
+    "inStock": "In stock",
+    "lowStock": "Only {{count}} left",
+    "soldOut": "Sold out",
+    "addToCart": "Add to Cart",
+    "loginToAdd": "Sign in or create an account to add items to your cart.",
+    "loginRequired": "Sign in to view your cart and checkout.",
+    "addFailed": "Could not add item to cart. Please try again.",
+    "updateFailed": "Could not update cart. Please try again."
+  },
+  "checkout": {
+    "title": "Checkout",
+    "cod": "Cash on Delivery",
+    "codNote": "Pay when your order arrives",
+    "fullName": "Full Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Street Address",
+    "address2": "Apartment, suite, etc.",
+    "city": "City",
+    "state": "State / Region",
+    "postal": "Postal Code",
+    "country": "Country",
+    "location": "Location (optional)",
+    "locationHint": "Click to set delivery pin on map",
+    "placeOrder": "Place Order",
+    "success": "Order placed! We'll contact you soon.",
+    "redirectingLogin": "Redirecting to sign in…",
+    "redirectingCart": "Redirecting to cart…",
+    "failed": "Checkout failed"
+  },
+  "auth": {
+    "loginTitle": "Welcome Back",
+    "registerTitle": "Create Account",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full Name",
+    "phone": "Phone",
+    "loginBtn": "Sign In",
+    "registerBtn": "Create Account",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "loginFailed": "Login failed",
+    "registrationFailed": "Registration failed",
+    "forgotPassword": "Forgot password?",
+    "forgotTitle": "Forgot password",
+    "forgotSubtitle": "Enter your email and we’ll send a 6-digit code to reset your password.",
+    "sendResetCode": "Send reset code",
+    "forgotFailed": "Could not send reset code",
+    "resetTitle": "Reset password",
+    "resetSubtitle": "Enter the code from your email and choose a new password.",
+    "resetCode": "Reset code",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "resetBtn": "Update password",
+    "resetFailed": "Could not reset password",
+    "resetSuccess": "Password updated. You can sign in now.",
+    "resetCodeSent": "A reset code has been sent to your email.",
+    "resendResetCode": "Resend code",
+    "passwordMismatch": "Passwords do not match",
+    "verifyTitle": "Verify your email",
+    "verifySubtitle": "We sent a 6-digit code to your email. Enter it below to activate your account.",
+    "verificationCode": "Verification code",
+    "verifyBtn": "Verify & activate",
+    "verifyFailed": "Verification failed",
+    "resendCode": "Resend code",
+    "codeResent": "A new code has been sent to your email.",
+    "codeSent": "We sent a verification code to your email."
+  },
+  "reviews": {
+    "title": "Customer Reviews",
+    "submit": "Write a Review",
+    "rating": "Rating",
+    "comment": "Your review",
+    "submitBtn": "Submit Review",
+    "noReviews": "No reviews yet. Be the first!",
+    "thanks": "Thank you for your review!"
+  },
+  "theme": {
+    "dark": "Dark",
+    "light": "Light"
+  },
+  "common": {
+    "toggleMenu": "Toggle menu",
+    "language": "Language",
+    "tryAgain": "Try again",
+    "errorLoad": "Something went wrong loading this section.",
+    "loading": "..."
+  },
+  "shop": {
+    "allProducts": "All products",
+    "empty": "No products to show yet.",
+    "emptyCategory": "No products in this category yet.",
+    "loadFailed": "Could not load this category.",
+    "categoryFallback": "Category"
+  },
+  "likes": {
+    "title": "Your likes",
+    "subtitle": "{{count}} saved pieces",
+    "empty": "You haven't liked any pieces yet.",
+    "like": "Like",
+    "unlike": "Unlike",
+    "failed": "Could not update like. Please try again.",
+    "loginRequired": "Sign in to save pieces you love."
+  },
+  "orderTracker": {
+    "title": "Order Tracker",
+    "subtitle": "View all your orders and their current status.",
+    "subtitleDetail": "Track your order items and delivery status.",
+    "orderNumber": "Order number",
+    "items": "Ordered items",
+    "itemsCount": "items",
+    "qty": "Qty",
+    "total": "Total",
+    "timeline": "Order timeline",
+    "empty": "You have no orders yet.",
+    "viewAll": "All orders",
+    "continueShopping": "Continue shopping",
+    "loadFailed": "Could not load order.",
+    "notFound": "Order not found.",
+    "status": {
+      "PENDING": "Pending",
+      "CONFIRMED": "Confirmed",
+      "PROCESSING": "Processing",
+      "PACKED": "Packed",
+      "SHIPPED": "Shipped",
+      "DELIVERED": "Delivered",
+      "CANCELLED": "Cancelled",
+      "REFUNDED": "Refunded",
+      "RETURNED": "Returned"
+    }
+  }
+}
