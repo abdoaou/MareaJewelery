@@ -1,4 +1,4 @@
-# Railway / Nixpacks: ensure Prisma Client is generated before start
+# Railway / Nixpacks: build storefront + admin, then run API which serves them
 [phases.setup]
 nixPkgs = ["openssl"]
 
@@ -6,7 +6,11 @@ nixPkgs = ["openssl"]
 cmds = ["npm ci"]
 
 [phases.build]
-cmds = ["npx prisma generate --schema=api/prisma/schema.prisma"]
+cmds = [
+  "npx prisma generate --schema=api/prisma/schema.prisma",
+  "npm run build -w website",
+  "npm run build:hosted -w admin",
+]
 
 [start]
 cmd = "npm run start -w api"

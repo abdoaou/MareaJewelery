@@ -1,4 +1,4 @@
-# Monorepo-friendly API image (build from repo root):
+# Build from repo root:
 #   docker build -f api/Dockerfile .
 FROM node:22-alpine AS base
 WORKDIR /app
@@ -13,14 +13,20 @@ COPY api/prisma ./api/prisma/
 RUN npm ci
 RUN npx prisma generate --schema=api/prisma/schema.prisma
 
+FROM deps AS build
+COPY . .
+RUN npm run build -w website
+RUN npm run build:hosted -w admin
+
 FROM base AS runner
 ENV NODE_ENV=production
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/api/node_modules ./api/node_modules
-COPY package.json package-lock.json ./
-COPY api ./api
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/package-lock.json ./package-lock.json
+COPY --from=build /app/api ./api
+COPY --from=build /app/website/dist ./website/dist
+COPY --from=build /app/admin/dist ./admin/dist
 WORKDIR /app/api
-RUN npx prisma generate
 EXPOSE 3000
 CMD ["npm", "run", "start"]

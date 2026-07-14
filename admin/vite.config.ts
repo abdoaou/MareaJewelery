@@ -2,7 +2,11 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+// Production on Railway is served from the API at /admin/
+const base = process.env.VITE_ADMIN_BASE || '/'
+
 export default defineConfig({
+  base,
   plugins: [react(), tailwindcss()],
   server: {
     port: 5175,

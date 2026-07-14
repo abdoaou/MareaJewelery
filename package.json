@@ -12,7 +12,7 @@
     "dev:api": "npm run dev -w api",
     "dev:website": "npm run dev -w website",
     "dev:admin": "npm run dev -w admin",
-    "build": "npm run build -w website && npm run build -w admin",
+    "build": "npm run build -w website && npm run build:hosted -w admin",
     "postinstall": "npm run db:generate -w api",
     "start": "npm run start -w api",
     "install:all": "npm install"
