@@ -1,0 +1,12 @@
+# Railway / Nixpacks: ensure Prisma Client is generated before start
+[phases.setup]
+nixPkgs = ["openssl"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npx prisma generate --schema=api/prisma/schema.prisma"]
+
+[start]
+cmd = "npm run start -w api"
