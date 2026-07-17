@@ -39,9 +39,13 @@ setupSwagger(app)
 
 // Admin panel at /admin (same Railway domain)
 if (hasAdmin) {
-  app.use('/admin', express.static(adminDist, { index: false, maxAge: '1d' }))
+  // Keep /admin and /admin/ equivalent for the SPA router + asset base
+  app.get('/admin', (_req, res) => res.redirect(302, '/admin/'))
+  app.use('/admin', express.static(adminDist, { index: false, maxAge: '1d', redirect: false }))
   app.use('/admin', (req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next()
+    // Don't SPA-fallback missing asset files (js/css/images)
+    if (path.extname(req.path)) return next()
     res.sendFile(path.join(adminDist, 'index.html'), (err) => (err ? next(err) : undefined))
   })
 }

@@ -31,6 +31,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return children
 }
 
+function adminBasename() {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
+  // Production is hosted at /admin; keep router under that path
+  if (base && base !== '/') return base
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) return '/admin'
+  return undefined
+}
+
 export default function App() {
   const initTheme = useThemeStore((s) => s.init)
 
@@ -39,7 +47,7 @@ export default function App() {
   }, [initTheme])
 
   return (
-    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || undefined}>
+    <BrowserRouter basename={adminBasename()}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route

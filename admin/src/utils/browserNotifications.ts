@@ -37,10 +37,10 @@ export function showBrowserNotification(
     const notification = new Notification(title, {
       body: options?.body,
       tag: options?.tag || 'marea-admin',
-      icon: '/icon.svg',
-      badge: '/icon.svg',
+      icon: `${import.meta.env.BASE_URL}icon.svg`,
+      badge: `${import.meta.env.BASE_URL}icon.svg`,
       requireInteraction: mobile,
-      data: { href: options?.href || '/' },
+      data: { href: options?.href || import.meta.env.BASE_URL || '/' },
     })
 
     notification.onclick = () => {

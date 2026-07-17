@@ -91,8 +91,10 @@ export async function api<T>(
     const ok = await refreshAccessToken()
     if (ok) return api(path, options, false)
     clearTokens()
-    if (!window.location.pathname.includes('/login')) {
-      window.location.href = '/login'
+    const adminBase = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
+    const loginPath = `${adminBase}/login`
+    if (!window.location.pathname.endsWith('/login') && !window.location.pathname.endsWith('/login/')) {
+      window.location.href = loginPath
     }
     throw new Error('Session expired. Please sign in again.')
   }
