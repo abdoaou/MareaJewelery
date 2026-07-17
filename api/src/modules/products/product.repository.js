@@ -12,6 +12,8 @@ function listCacheKey(query) {
     featured: query.featured ?? '',
     bestSeller: query.bestSeller ?? '',
     newArrival: query.newArrival ?? '',
+    recommended: query.recommended ?? '',
+    excludeId: query.excludeId || '',
   })}`
 }
 
@@ -27,6 +29,8 @@ export const productRepository = {
       featured,
       bestSeller,
       newArrival,
+      recommended,
+      excludeId,
     } = query
 
     const cacheKey = listCacheKey(query)
@@ -48,6 +52,8 @@ export const productRepository = {
     if (featured !== undefined) where.isFeatured = featured === 'true' || featured === true
     if (bestSeller !== undefined) where.isBestSeller = bestSeller === 'true' || bestSeller === true
     if (newArrival !== undefined) where.isNewArrival = newArrival === 'true' || newArrival === true
+    if (recommended !== undefined) where.isRecommended = recommended === 'true' || recommended === true
+    if (excludeId) where.id = { not: String(excludeId) }
 
     const pageNum = Number(page) || 1
     const limitNum = Math.min(Number(limit) || 20, 100)
@@ -67,6 +73,7 @@ export const productRepository = {
         isFeatured: true,
         isBestSeller: true,
         isNewArrival: true,
+        isRecommended: true,
         createdAt: true,
         categoryId: true,
         images: {
@@ -79,7 +86,12 @@ export const productRepository = {
       },
       skip: (pageNum - 1) * limitNum,
       take: limitNum,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        ...(recommended === 'true' || recommended === true
+          ? [{ isRecommended: 'desc' }, { isBestSeller: 'desc' }]
+          : []),
+        { createdAt: 'desc' },
+      ],
     })
     const total = await prisma.product.count({ where })
 
@@ -106,16 +118,23 @@ export const productRepository = {
       },
     }),
 
-  findBySlug: (slug) =>
-    prisma.product.findFirst({
-      where: { slug, deletedAt: null },
+  findBySlug: async (slug) => {
+    const cacheKey = `products:slug:${slug}`
+    const cached = await cacheGet(cacheKey)
+    if (cached) return cached
+
+    const product = await prisma.product.findFirst({
+      where: { slug, deletedAt: null, status: 'PUBLISHED' },
       include: {
-        images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }], take: 5 },
+        images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }] },
         variants: true,
         category: { select: { id: true, name: true, slug: true } },
         inventory: { select: { currentStock: true, reservedStock: true } },
       },
-    }),
+    })
+    if (product) await cacheSet(cacheKey, product, 60)
+    return product
+  },
 
   create: async (data) => {
     const product = await prisma.product.create({ data, include: { images: true } })

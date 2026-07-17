@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { Product } from '../data/products'
 import { api } from '../services/api'
 import { mapApiProduct } from '../utils/mapProduct'
+import { cached } from '../utils/clientCache'
 import ProductCard from '../components/ProductCard'
 import LoadingAnimation from '../components/LoadingAnimation'
 
@@ -22,10 +23,12 @@ export default function CategoryPage() {
     setLoading(true)
     setError('')
 
-    Promise.all([
-      api.getCategoryBySlug(slug),
-      api.getProducts({ status: 'PUBLISHED', categorySlug: slug, limit: 100 }),
-    ])
+    cached(`category:${slug}`, 60_000, () =>
+      Promise.all([
+        api.getCategoryBySlug(slug),
+        api.getProducts({ status: 'PUBLISHED', categorySlug: slug, limit: 100 }),
+      ]),
+    )
       .then(([catRes, prodRes]) => {
         if (cancelled) return
         setTitle(catRes.data.name)

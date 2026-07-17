@@ -44,7 +44,7 @@ export default function NewArrivals() {
           <h2 className="font-serif text-4xl font-light text-marea-cream md:text-5xl">
             {t('sections.newArrivals.title')}
           </h2>
-          <Link to="/shop" className="btn-secondary mt-6 text-sm">
+          <Link to="/shop?newest=1" className="btn-secondary mt-6 text-sm">
             {t('sections.bestSellers.viewAll')}
           </Link>
         </motion.div>

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { Product } from '../data/products'
 import { api } from '../services/api'
 import { mapApiProduct } from '../utils/mapProduct'
+import { cached } from '../utils/clientCache'
 import ProductCard from '../components/ProductCard'
 import LoadingAnimation from '../components/LoadingAnimation'
 
@@ -12,28 +13,32 @@ export default function ShopPage() {
   const [params] = useSearchParams()
   const bestSeller = params.get('bestSeller') === '1'
   const newArrival = params.get('newArrival') === '1'
+  const newest = params.get('newest') === '1'
 
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
 
   const title = useMemo(() => {
     if (bestSeller) return t('sections.bestSellers.title')
-    if (newArrival) return t('sections.newArrivals.title')
+    if (newest || newArrival) return t('sections.newArrivals.title')
     return t('shop.allProducts')
-  }, [bestSeller, newArrival, t])
+  }, [bestSeller, newest, newArrival, t])
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    api
-      .getProducts({
+    cached(`shop:${bestSeller}:${newArrival}:${newest}`, 60_000, async () => {
+      const res = await api.getProducts({
         status: 'PUBLISHED',
         limit: 100,
         ...(bestSeller ? { bestSeller: true } : {}),
-        ...(newArrival ? { newArrival: true } : {}),
+        // newest=1 = createdAt desc (API default); newArrival keeps the flag filter
+        ...(!newest && newArrival ? { newArrival: true } : {}),
       })
-      .then((res) => {
-        if (!cancelled) setProducts((res.data || []).map(mapApiProduct))
+      return (res.data || []).map(mapApiProduct)
+    })
+      .then((items) => {
+        if (!cancelled) setProducts(items)
       })
       .catch(() => {
         if (!cancelled) setProducts([])
@@ -44,7 +49,7 @@ export default function ShopPage() {
     return () => {
       cancelled = true
     }
-  }, [bestSeller, newArrival])
+  }, [bestSeller, newArrival, newest])
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-24 lg:px-8">

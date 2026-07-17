@@ -345,6 +345,8 @@ export const api = {
     featured?: boolean
     bestSeller?: boolean
     newArrival?: boolean
+    recommended?: boolean
+    excludeId?: string
     search?: string
   }) => {
     const q = new URLSearchParams()
@@ -356,6 +358,8 @@ export const api = {
     if (params?.featured != null) q.set('featured', String(params.featured))
     if (params?.bestSeller != null) q.set('bestSeller', String(params.bestSeller))
     if (params?.newArrival != null) q.set('newArrival', String(params.newArrival))
+    if (params?.recommended != null) q.set('recommended', String(params.recommended))
+    if (params?.excludeId) q.set('excludeId', params.excludeId)
     if (params?.search) q.set('search', params.search)
     const qs = q.toString()
     return request<{
@@ -363,7 +367,8 @@ export const api = {
       meta?: { total: number; page: number; limit: number }
     }>(`/products${qs ? `?${qs}` : ''}`)
   },
-  getProductBySlug: (slug: string) => request<{ data: { id: string; slug: string } }>(`/products/slug/${slug}`),
+  getProductBySlug: (slug: string) =>
+    request<{ data: import('../utils/mapProduct').ApiProduct }>(`/products/slug/${slug}`),
   getCategories: () =>
     request<{
       data: Array<{

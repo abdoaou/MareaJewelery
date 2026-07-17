@@ -17,6 +17,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import LikesPage from './pages/LikesPage'
 import CategoryPage from './pages/CategoryPage'
 import ShopPage from './pages/ShopPage'
+import ProductDetailsPage from './pages/ProductDetailsPage'
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/shop" element={<ShopPage />} />
+                  <Route path="/product/:slug" element={<ProductDetailsPage />} />
                   <Route path="/category/:slug" element={<CategoryPage />} />
                   <Route path="/cart" element={<CartPage />} />
                   <Route path="/checkout" element={<CheckoutPage />} />

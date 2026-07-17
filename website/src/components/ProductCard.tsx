@@ -1,7 +1,7 @@
 import { useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Star, ShoppingBag, Heart } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useLocation, useNavigate } from 'react-router-dom'
 import type { Product } from '../data/products'
 import StockBadge from './StockBadge'
 import { useCartStore } from '../store/cartStore'
@@ -9,6 +9,7 @@ import { useWishlistStore } from '../store/wishlistStore'
 import { useAuth } from '../context/AuthContext'
 import { useProductCatalog } from '../context/ProductCatalogContext'
 import { setPendingLike } from '../utils/pendingLike'
+import { setPendingAdd } from '../utils/pendingCart'
 import { formatPrice } from '../utils/formatPrice'
 
 interface ProductCardProps {
@@ -35,6 +36,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       : t(`products.${product.id}.description`, '')
   const badge = product.badgeKey ? t(product.badgeKey) : undefined
   const liked = resolvedId ? likedIds.includes(resolvedId) : false
+  const detailPath = `/product/${product.apiSlug || product.id}`
 
   const resolveId = async () => {
     if (resolvedId) return resolvedId
@@ -87,7 +89,9 @@ export default function ProductCard({ product }: ProductCardProps) {
     })()
   }
 
-  const handleAdd = async () => {
+  const handleAdd = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     if (product.stock <= 0 || adding) return
 
     setAdding(true)
@@ -97,6 +101,12 @@ export default function ProductCard({ product }: ProductCardProps) {
       const productId = await resolveId()
       if (!productId) {
         setError(t('cart.addFailed'))
+        return
+      }
+
+      if (!customer) {
+        setPendingAdd({ productId, returnTo: location.pathname })
+        navigate('/login', { state: { from: location.pathname, reason: 'addToCart' } })
         return
       }
 
@@ -127,16 +137,22 @@ export default function ProductCard({ product }: ProductCardProps) {
             className={`transition-transform duration-200 ${liked ? 'fill-marea-gold text-marea-gold' : ''} ${heartPop ? 'like-heart-pop' : ''}`}
           />
         </button>
-        <img
-          src={product.image}
-          alt={name}
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-          loading="lazy"
-        />
+        <Link to={detailPath} className="block h-full w-full">
+          <img
+            src={product.image}
+            alt={name}
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            loading="lazy"
+          />
+        </Link>
       </div>
       <div className="p-5">
-        <h3 className="font-serif text-xl font-medium text-marea-cream">{name}</h3>
-        <p className="mt-1 text-sm text-marea-muted">{description}</p>
+        <Link to={detailPath}>
+          <h3 className="font-serif text-xl font-medium text-marea-cream transition-colors hover:text-marea-gold">
+            {name}
+          </h3>
+        </Link>
+        <p className="mt-1 line-clamp-2 text-sm text-marea-muted">{description}</p>
         <div className="mt-2">
           <StockBadge stock={product.stock} />
         </div>

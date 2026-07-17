@@ -45,7 +45,7 @@ export default function BestSellers() {
               {t('sections.bestSellers.title')}
             </h2>
           </motion.div>
-          <Link to="/shop" className="btn-secondary shrink-0 text-sm">
+          <Link to="/shop?bestSeller=1" className="btn-secondary shrink-0 text-sm">
             {t('sections.bestSellers.viewAll')}
           </Link>
         </div>

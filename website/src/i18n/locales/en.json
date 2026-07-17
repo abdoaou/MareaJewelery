@@ -293,6 +293,16 @@
     "loadFailed": "Could not load this category.",
     "categoryFallback": "Category"
   },
+  "product": {
+    "loadFailed": "Could not load this product.",
+    "notFound": "Product not found.",
+    "noImage": "No image available",
+    "showImage": "Show image {{index}}",
+    "sku": "SKU",
+    "variants": "Options",
+    "suggestionsLabel": "You may also like",
+    "suggestionsTitle": "Suggested pieces"
+  },
   "likes": {
     "title": "Your likes",
     "subtitle": "{{count}} saved pieces",

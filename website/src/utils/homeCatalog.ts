@@ -1,6 +1,7 @@
 import { api } from '../services/api'
 import type { Product } from '../data/products'
 import { mapApiProduct, type ApiProduct } from './mapProduct'
+import { cached } from './clientCache'
 
 type CategoryRow = {
   id: string
@@ -12,45 +13,24 @@ type CategoryRow = {
   isHidden?: boolean
 }
 
-let productsPromise: Promise<ApiProduct[]> | null = null
-let categoriesPromise: Promise<CategoryRow[]> | null = null
-
-export function loadPublishedProducts(): Promise<ApiProduct[]> {
-  if (!productsPromise) {
-    productsPromise = api
-      .getProducts({ status: 'PUBLISHED', limit: 48 })
-      .then((res) => (res.data || []) as ApiProduct[])
-      .catch((err) => {
-        productsPromise = null
-        throw err
-      })
-  }
-  return productsPromise
-}
-
 export function loadCategories(): Promise<CategoryRow[]> {
-  if (!categoriesPromise) {
-    categoriesPromise = api
-      .getCategories()
-      .then((res) => (res.data || []) as CategoryRow[])
-      .catch((err) => {
-        categoriesPromise = null
-        throw err
-      })
-  }
-  return categoriesPromise
+  return cached('categories', 120_000, async () => {
+    const res = await api.getCategories()
+    return (res.data || []) as CategoryRow[]
+  })
 }
 
-export async function loadBestSellerProducts(): Promise<Product[]> {
-  const all = await loadPublishedProducts()
-  const flagged = all.filter((p) => p.isBestSeller).map(mapApiProduct)
-  if (flagged.length) return flagged.slice(0, 12)
-  return all.slice(0, 12).map(mapApiProduct)
+export function loadBestSellerProducts(): Promise<Product[]> {
+  return cached('home:bestSellers', 60_000, async () => {
+    const res = await api.getProducts({ status: 'PUBLISHED', bestSeller: true, limit: 12 })
+    return ((res.data || []) as ApiProduct[]).map(mapApiProduct)
+  })
 }
 
-export async function loadNewArrivalProducts(): Promise<Product[]> {
-  const all = await loadPublishedProducts()
-  const flagged = all.filter((p) => p.isNewArrival).map(mapApiProduct)
-  if (flagged.length) return flagged.slice(0, 12)
-  return all.slice(0, 12).map(mapApiProduct)
+/** Newest published products (API default order: createdAt desc). */
+export function loadNewArrivalProducts(): Promise<Product[]> {
+  return cached('home:newest', 60_000, async () => {
+    const res = await api.getProducts({ status: 'PUBLISHED', limit: 12 })
+    return ((res.data || []) as ApiProduct[]).map(mapApiProduct)
+  })
 }

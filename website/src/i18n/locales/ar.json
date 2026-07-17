@@ -293,6 +293,16 @@
     "loadFailed": "تعذر تحميل هذه الفئة.",
     "categoryFallback": "فئة"
   },
+  "product": {
+    "loadFailed": "تعذر تحميل هذا المنتج.",
+    "notFound": "المنتج غير موجود.",
+    "noImage": "لا توجد صورة",
+    "showImage": "عرض الصورة {{index}}",
+    "sku": "رمز المنتج",
+    "variants": "الخيارات",
+    "suggestionsLabel": "قد يعجبك أيضاً",
+    "suggestionsTitle": "قطع مقترحة"
+  },
   "likes": {
     "title": "مفضلتك",
     "subtitle": "{{count}} قطع محفوظة",

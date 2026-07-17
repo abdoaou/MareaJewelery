@@ -1,5 +1,13 @@
 import type { Product } from '../data/products'
 
+export type ApiProductImage = {
+  id?: string
+  url: string
+  alt?: string | null
+  isPrimary?: boolean
+  sortOrder?: number
+}
+
 export type ApiProduct = {
   id: string
   name: string
@@ -12,9 +20,29 @@ export type ApiProduct = {
   isBestSeller?: boolean
   isNewArrival?: boolean
   isFeatured?: boolean
-  images?: Array<{ url: string; isPrimary?: boolean }>
+  isRecommended?: boolean
+  sku?: string | null
+  tags?: string[]
+  images?: ApiProductImage[]
   category?: { id: string; name: string; slug: string } | null
   inventory?: Array<{ currentStock: number; reservedStock: number }>
+  variants?: Array<{
+    id: string
+    name?: string | null
+    sku?: string | null
+    price?: number | string | null
+    stock?: number | null
+  }>
+}
+
+export type ProductDetail = Product & {
+  images: string[]
+  fullDescription: string
+  categoryId?: string
+  categorySlug?: string
+  sku?: string
+  tags: string[]
+  variants: Array<{ id: string; name: string; price?: number; stock?: number }>
 }
 
 function availableStock(inventory?: ApiProduct['inventory']) {
@@ -50,5 +78,25 @@ export function mapApiProduct(p: ApiProduct): Product {
     image: primary,
     categoryKey: p.category?.name || '',
     stock: availableStock(p.inventory),
+  }
+}
+
+export function mapApiProductDetail(p: ApiProduct): ProductDetail {
+  const base = mapApiProduct(p)
+  const images = (p.images || []).map((img) => img.url).filter(Boolean)
+  return {
+    ...base,
+    images: images.length ? images : base.image ? [base.image] : [],
+    fullDescription: p.description || p.shortDesc || '',
+    categoryId: p.category?.id,
+    categorySlug: p.category?.slug,
+    sku: p.sku || undefined,
+    tags: Array.isArray(p.tags) ? p.tags : [],
+    variants: (p.variants || []).map((v) => ({
+      id: v.id,
+      name: v.name || v.sku || 'Variant',
+      price: v.price != null ? Number(v.price) : undefined,
+      stock: v.stock != null ? Number(v.stock) : undefined,
+    })),
   }
 }
