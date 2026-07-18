@@ -18,6 +18,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
+  // Strip spaces, invisible RTL marks, and full-width @ that mobile keyboards insert
+  const cleanEmail = (value: string) =>
+    value.replace(/[\s\u200e\u200f\u202a-\u202e]/g, '').replace(/＠/g, '@')
+
   const reason = (location.state as { reason?: string } | null)?.reason
   const from = (location.state as { from?: string } | null)?.from || '/'
   const resetSuccess = (location.state as { resetSuccess?: boolean } | null)?.resetSuccess
@@ -71,8 +75,11 @@ export default function LoginPage() {
           {t('auth.email')}
           <input
             type="email"
+            dir="ltr"
+            inputMode="email"
+            autoComplete="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => setEmail(cleanEmail(e.target.value))}
             required
             className="mt-1 w-full rounded-lg border border-marea-border bg-marea-bg px-4 py-3 outline-none focus:border-marea-gold"
           />

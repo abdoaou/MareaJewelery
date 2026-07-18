@@ -17,10 +17,14 @@ export default function RegisterPage() {
   const reason = (location.state as { reason?: string } | null)?.reason
   const from = (location.state as { from?: string } | null)?.from || '/'
 
+  // Strip spaces, invisible RTL marks, and full-width @ that mobile keyboards insert
+  const cleanEmail = (value: string) =>
+    value.replace(/[\s\u200e\u200f\u202a-\u202e]/g, '').replace(/＠/g, '@')
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const result = await register(form)
+      const result = await register({ ...form, email: cleanEmail(form.email) })
       if (result.requiresVerification) {
         navigate('/verify-email', {
           state: {
@@ -54,8 +58,24 @@ export default function RegisterPage() {
             {t(`auth.${key === 'fullName' ? 'fullName' : key}`)}
             <input
               type={key === 'email' ? 'email' : key === 'password' ? 'password' : 'text'}
+              dir={key === 'email' || key === 'phone' ? 'ltr' : undefined}
+              inputMode={key === 'email' ? 'email' : key === 'phone' ? 'tel' : undefined}
+              autoComplete={
+                key === 'email'
+                  ? 'email'
+                  : key === 'password'
+                    ? 'new-password'
+                    : key === 'phone'
+                      ? 'tel'
+                      : 'name'
+              }
               value={form[key]}
-              onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  [key]: key === 'email' ? cleanEmail(e.target.value) : e.target.value,
+                })
+              }
               required={key !== 'phone'}
               className="mt-1 w-full rounded-lg border border-marea-border bg-marea-bg px-4 py-3 outline-none focus:border-marea-gold"
             />
