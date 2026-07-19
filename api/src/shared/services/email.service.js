@@ -30,10 +30,52 @@ function getTransporter() {
   return transporter
 }
 
+function parseFrom(from) {
+  const normalized = normalizeFrom(from)
+  const match = /^(.*?)\s*<(.+)>$/.exec(normalized)
+  if (match) return { name: match[1].trim() || 'Marea Jewelry', email: match[2].trim() }
+  return { name: 'Marea Jewelry', email: normalized }
+}
+
+/** Brevo HTTP API — works on hosts that block outbound SMTP ports (e.g. Railway). */
+async function sendViaBrevoApi({ to, subject, html, text }) {
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': env.email.brevoApiKey,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      sender: parseFrom(env.email.from),
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+      textContent: text,
+    }),
+  })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`Brevo API ${res.status}: ${body.slice(0, 300)}`)
+  }
+  const json = await res.json().catch(() => ({}))
+  logger.info('[Email sent via Brevo API]', { to, subject, messageId: json.messageId })
+  return json
+}
+
 async function sendOnce({ to, subject, html, text }) {
+  if (env.email.brevoApiKey) {
+    return sendViaBrevoApi({ to, subject, html, text })
+  }
+
   const transport = getTransporter()
   if (!transport) {
     logger.warn('[Email stub] SMTP not configured — email not sent', { to, subject })
+    // In production a missing email config must surface as a failure,
+    // otherwise users are told a code was sent when nothing went out.
+    if (env.nodeEnv === 'production') {
+      throw new Error('Email is not configured (set BREVO_API_KEY, or SMTP_HOST/SMTP_USER/SMTP_PASS/EMAIL_FROM)')
+    }
     return { stub: true }
   }
 

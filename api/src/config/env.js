@@ -33,6 +33,8 @@ export const env = {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
     from: process.env.EMAIL_FROM || 'noreply@marea.com',
+    /** Brevo HTTP API key (xkeysib-...). Preferred over SMTP: works on hosts that block SMTP ports (e.g. Railway). */
+    brevoApiKey: process.env.BREVO_API_KEY || '',
   },
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
   adminUrl: process.env.ADMIN_URL || 'http://localhost:5175',

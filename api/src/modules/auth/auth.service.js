@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { authRepository } from './auth.repository.js'
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../../shared/utils/jwt.js'
-import { ConflictError, UnauthorizedError, NotFoundError, ValidationError } from '../../shared/errors/AppError.js'
+import { AppError, ConflictError, UnauthorizedError, NotFoundError, ValidationError } from '../../shared/errors/AppError.js'
 import { env } from '../../config/env.js'
 import { sendEmail } from '../../shared/services/email.service.js'
 import { wrapVerificationEmail, wrapPasswordResetEmail } from '../../shared/services/email.templates.js'
@@ -115,7 +115,16 @@ export const authService = {
     if (user.emailVerified) throw new ValidationError('Email already verified')
 
     const verification = await authRepository.createEmailVerification(user.id)
-    await sendVerificationEmail(user, verification.token)
+    try {
+      await sendVerificationEmail(user, verification.token)
+    } catch (err) {
+      logger.error('Verification email failed on resend', { email: user.email, error: err.message })
+      throw new AppError(
+        'Could not send the verification email. Please try again in a moment.',
+        502,
+        'EMAIL_SEND_FAILED',
+      )
+    }
     return { message: 'Verification code sent' }
   },
 
