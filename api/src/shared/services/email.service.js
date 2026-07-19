@@ -21,9 +21,10 @@ function getTransporter() {
       secure: port === 465,
       requireTLS: port === 587,
       auth: { user: env.email.user, pass: env.email.pass },
-      connectionTimeout: 15_000,
-      greetingTimeout: 15_000,
-      socketTimeout: 20_000,
+      // Fail fast so retries (and the verify page's auto-resend) kick in quickly
+      connectionTimeout: 8_000,
+      greetingTimeout: 8_000,
+      socketTimeout: 12_000,
       tls: { minVersion: 'TLSv1.2' },
     })
   }

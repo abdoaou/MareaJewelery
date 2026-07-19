@@ -10,14 +10,17 @@ import { cartService } from '../cart/cart.service.js'
 
 const SALT_ROUNDS = 12
 
-async function sendVerificationEmail(user, code) {
+async function sendVerificationEmail(user, code, options = {}) {
   const name = user.firstName || 'Customer'
-  await sendEmail({
-    to: user.email,
-    subject: 'Verify your Marea account',
-    html: wrapVerificationEmail({ firstName: name, code }),
-    text: `Hello ${name},\n\nYour Marea verification code is: ${code}\n\nThis code expires in 15 minutes.`,
-  })
+  await sendEmail(
+    {
+      to: user.email,
+      subject: 'Verify your Marea account',
+      html: wrapVerificationEmail({ firstName: name, code }),
+      text: `Hello ${name},\n\nYour Marea verification code is: ${code}\n\nThis code expires in 15 minutes.`,
+    },
+    options,
+  )
 }
 
 async function sendPasswordResetEmail(user, code) {
@@ -64,7 +67,8 @@ export const authService = {
     const verification = await authRepository.createEmailVerification(user.id)
     let emailSent = true
     try {
-      await sendVerificationEmail(user, verification.token)
+      // Keep register fast: 2 quick attempts; the verify page auto-resends on failure
+      await sendVerificationEmail(user, verification.token, { retries: 2 })
     } catch (err) {
       emailSent = false
       logger.error('Verification email failed on register', {
