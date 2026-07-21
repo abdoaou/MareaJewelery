@@ -223,6 +223,8 @@
     "location": "Location (optional)",
     "locationHint": "Click to set delivery pin on map",
     "placeOrder": "Place Order",
+    "subtotal": "Subtotal",
+    "deliveryNote": "This total does not include delivery charges. Delivery fees will be confirmed when we contact you.",
     "success": "Order placed! We'll contact you soon.",
     "redirectingLogin": "Redirecting to sign in…",
     "redirectingCart": "Redirecting to cart…",

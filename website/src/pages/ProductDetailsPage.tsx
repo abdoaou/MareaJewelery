@@ -8,7 +8,6 @@ import type { Product } from '../data/products'
 import { formatPrice } from '../utils/formatPrice'
 import StockBadge from '../components/StockBadge'
 import ProductCard from '../components/ProductCard'
-import ProductReviews from '../components/ProductReviews'
 import LoadingAnimation from '../components/LoadingAnimation'
 import { useCartStore } from '../store/cartStore'
 import { useWishlistStore } from '../store/wishlistStore'
@@ -307,12 +306,6 @@ export default function ProductDetailsPage() {
           </div>
         </div>
       </div>
-
-      {product.apiProductId && (
-        <div className="mt-16 border-t border-marea-border pt-10">
-          <ProductReviews productId={product.apiProductId} />
-        </div>
-      )}
 
       {suggestions.length > 0 && (
         <section className="mt-20">

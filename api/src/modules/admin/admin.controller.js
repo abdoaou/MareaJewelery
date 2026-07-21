@@ -38,6 +38,7 @@ export const adminController = {
       subject: req.body.subject,
       message: req.body.message,
       adminId: req.user.id,
+      adminEmail: req.user.email,
     })
     return success(res, {
       data,

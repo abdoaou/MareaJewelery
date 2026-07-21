@@ -1,7 +1,7 @@
 import prisma from '../../config/prisma.js'
-import { ValidationError } from '../../shared/errors/AppError.js'
+import { AppError, ValidationError } from '../../shared/errors/AppError.js'
 import { notifyAdmin } from '../../sockets/index.js'
-import { sendEmail } from '../../shared/services/email.service.js'
+import { sendEmail, isEmailConfigured } from '../../shared/services/email.service.js'
 import { personalize, plainTextToHtml, wrapBroadcastEmail } from '../../shared/services/email.templates.js'
 import { logger } from '../../shared/utils/logger.js'
 import { cacheGet, cacheSet } from '../../config/redis.js'
@@ -12,6 +12,16 @@ function isDeliverableEmail(email) {
   if (!email || !email.includes('@')) return false
   if (PLACEHOLDER_EMAIL_RE.test(email)) return false
   return true
+}
+
+function assertEmailConfigured() {
+  if (!isEmailConfigured()) {
+    throw new AppError(
+      'Email is not configured on the server. Add BREVO_API_KEY and EMAIL_FROM in Railway variables.',
+      503,
+      'EMAIL_NOT_CONFIGURED',
+    )
+  }
 }
 
 function dayStart(d = new Date()) {
@@ -342,7 +352,8 @@ export const adminService = {
     return { items, total, page: pageNum, limit: limitNum }
   },
 
-  async broadcastCustomerEmail({ subject, message, adminId }) {
+  async broadcastCustomerEmail({ subject, message, adminId, adminEmail }) {
+    assertEmailConfigured()
     const trimmedSubject = subject?.trim()
     const trimmedMessage = message?.trim()
     if (!trimmedSubject) throw new ValidationError('Subject is required')
@@ -418,6 +429,23 @@ export const adminService = {
       )
     }
 
+    // Send the admin a copy so they can confirm delivery (and check spam)
+    if (adminEmail && isDeliverableEmail(adminEmail)) {
+      try {
+        await sendEmail({
+          to: adminEmail,
+          subject: `[Marea Admin] Broadcast sent to ${sent} customer(s): ${trimmedSubject}`,
+          html: wrapBroadcastEmail({
+            firstName: 'Admin',
+            bodyHtml: `<p>Your customer broadcast was delivered to <strong>${sent}</strong> recipient(s).</p><p><strong>Subject:</strong> ${trimmedSubject}</p><p>Skipped: ${skipped} · Failed: ${failures.length}</p><p>If customers did not receive it, ask them to check spam.</p>`,
+          }),
+          text: `Broadcast delivered to ${sent} customers.\nSubject: ${trimmedSubject}\nSkipped: ${skipped}\nFailed: ${failures.length}`,
+        })
+      } catch (err) {
+        logger.warn('[Broadcast admin copy failed]', { adminEmail, error: err.message })
+      }
+    }
+
     return {
       sent,
       skipped,
@@ -428,6 +456,7 @@ export const adminService = {
   },
 
   async sendTestCustomerEmail({ subject, message, adminId, adminEmail, adminFirstName }) {
+    assertEmailConfigured()
     const trimmedSubject = subject?.trim() || 'Marea test email'
     const trimmedMessage = message?.trim() || 'This is a test email from the Marea admin panel.'
     if (!adminEmail) throw new ValidationError('Admin email is missing')
@@ -436,12 +465,21 @@ export const adminService = {
     const bodyHtml = plainTextToHtml(bodyText)
     const html = wrapBroadcastEmail({ firstName: adminFirstName || 'Admin', bodyHtml })
 
-    await sendEmail({
-      to: adminEmail,
-      subject: `[TEST] ${trimmedSubject}`,
-      html,
-      text: bodyText,
-    })
+    try {
+      await sendEmail({
+        to: adminEmail,
+        subject: `[TEST] ${trimmedSubject}`,
+        html,
+        text: bodyText,
+      })
+    } catch (err) {
+      logger.error('[Test email failed]', { to: adminEmail, error: err.message })
+      throw new AppError(
+        `Could not send test email: ${err.message}`,
+        502,
+        'EMAIL_SEND_FAILED',
+      )
+    }
 
     await prisma.adminLog
       .create({

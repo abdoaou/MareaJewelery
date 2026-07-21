@@ -52,7 +52,7 @@ export function CustomersPage() {
       pushToast({
         type: failed > 0 && sent === 0 ? 'error' : 'success',
         title: failed > 0 ? 'Email finished with errors' : 'Emails sent',
-        message: `Delivered ${sent} · failed ${failed} · skipped ${skipped} (fake/test addresses). Check spam if missing.`,
+        message: `Delivered ${sent} · failed ${failed} · skipped ${skipped}. A copy was sent to your admin inbox — check spam too.`,
       })
       if (sent > 0) {
         setEmailOpen(false)

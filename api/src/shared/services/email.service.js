@@ -91,6 +91,13 @@ async function sendOnce({ to, subject, html, text }) {
   return info
 }
 
+/** True when Brevo API or SMTP credentials are present. */
+export function isEmailConfigured() {
+  return Boolean(
+    env.email.brevoApiKey || (env.email.host && env.email.user && env.email.pass),
+  )
+}
+
 /** Send email with retries so the first auth code is delivered reliably. */
 export async function sendEmail({ to, subject, html, text }, { retries = 3 } = {}) {
   let lastError

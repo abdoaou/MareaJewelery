@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../services/api'
 import { useCartStore } from '../store/cartStore'
 import { useAuth } from '../context/AuthContext'
+import { formatPrice } from '../utils/formatPrice'
 
 export default function CheckoutPage() {
   const { t } = useTranslation()
@@ -20,6 +21,10 @@ export default function CheckoutPage() {
   }, [customer, apiItems.length, navigate])
 
   const cartItems = apiItems.map((i) => ({ product_id: i.product_id, quantity: i.quantity }))
+  const subtotal = apiItems.reduce(
+    (sum, i) => sum + Number(i.sale_price ?? i.price) * i.quantity,
+    0,
+  )
   const [form, setForm] = useState({
     customer_name: customer?.full_name || '',
     customer_email: customer?.email || '',
@@ -90,6 +95,14 @@ export default function CheckoutPage() {
       <div className="mt-4 rounded-xl border border-marea-gold/30 bg-marea-gold/10 p-4">
         <p className="font-medium text-marea-gold">{t('checkout.cod')}</p>
         <p className="text-sm text-marea-muted">{t('checkout.codNote')}</p>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-marea-border bg-marea-bg-card p-4">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-marea-muted">{t('checkout.subtotal')}</span>
+          <span className="price-en font-medium text-marea-cream">{formatPrice(subtotal)}</span>
+        </div>
+        <p className="mt-3 text-sm text-marea-muted">{t('checkout.deliveryNote')}</p>
       </div>
 
       {error && <p className="mt-4 text-red-400">{error}</p>}
