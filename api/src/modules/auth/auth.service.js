@@ -3,7 +3,7 @@ import { authRepository } from './auth.repository.js'
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../../shared/utils/jwt.js'
 import { AppError, ConflictError, UnauthorizedError, NotFoundError, ValidationError } from '../../shared/errors/AppError.js'
 import { env } from '../../config/env.js'
-import { sendEmail } from '../../shared/services/email.service.js'
+import { sendEmail, assertEmailConfigured } from '../../shared/services/email.service.js'
 import { wrapVerificationEmail, wrapPasswordResetEmail } from '../../shared/services/email.templates.js'
 import { logger } from '../../shared/utils/logger.js'
 import { cartService } from '../cart/cart.service.js'
@@ -24,12 +24,16 @@ async function sendVerificationEmail(user, code, options = {}) {
 }
 
 async function sendPasswordResetEmail(user, code) {
-  await sendEmail({
-    to: user.email,
-    subject: 'Reset your Marea password',
-    html: wrapPasswordResetEmail({ code }),
-    text: `Your Marea password reset code is: ${code}\n\nThis code expires in 1 hour.`,
-  })
+  const name = user.firstName || 'Customer'
+  await sendEmail(
+    {
+      to: user.email,
+      subject: 'Reset your Marea password',
+      html: wrapPasswordResetEmail({ firstName: name, code }),
+      text: `Hello ${name},\n\nYour Marea password reset code is: ${code}\n\nThis code expires in 1 hour.`,
+    },
+    { retries: 2 },
+  )
 }
 
 function parseExpiry(exp) {
@@ -209,18 +213,28 @@ export const authService = {
   },
 
   async forgotPassword(email) {
+    try {
+      assertEmailConfigured()
+    } catch (err) {
+      throw new AppError(err.message, 503, 'EMAIL_NOT_CONFIGURED')
+    }
+
     const normalized = String(email || '').trim().toLowerCase()
     const user = await authRepository.findByEmail(normalized)
-    if (!user) return { message: 'If the email exists, a reset code was sent' }
+    if (!user) return { message: 'If the email exists, a reset code was sent', emailSent: true }
 
     const reset = await authRepository.createPasswordReset(normalized)
     try {
       await sendPasswordResetEmail(user, reset.token)
     } catch (err) {
       logger.error('Password reset email failed', { email: user.email, error: err.message })
-      throw new ValidationError('Could not send reset code. Please try again.')
+      throw new AppError(
+        `Could not send reset code: ${err.message}`,
+        502,
+        'EMAIL_SEND_FAILED',
+      )
     }
-    return { message: 'If the email exists, a reset code was sent' }
+    return { message: 'If the email exists, a reset code was sent', emailSent: true }
   },
 
   async resetPassword(token, password, email) {

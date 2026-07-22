@@ -49,10 +49,14 @@ export function CustomersPage() {
       const sent = res.data?.sent ?? 0
       const failed = res.data?.failed ?? 0
       const skipped = res.data?.skipped ?? 0
+      const firstFailure = res.data?.failures?.[0]?.error
       pushToast({
-        type: failed > 0 && sent === 0 ? 'error' : 'success',
-        title: failed > 0 ? 'Email finished with errors' : 'Emails sent',
-        message: `Delivered ${sent} · failed ${failed} · skipped ${skipped}. A copy was sent to your admin inbox — check spam too.`,
+        type: failed > 0 && sent === 0 ? 'error' : sent > 0 && failed > 0 ? 'warning' : 'success',
+        title: failed > 0 && sent === 0 ? 'Email failed' : sent > 0 && failed > 0 ? 'Partially sent' : 'Emails sent',
+        message:
+          firstFailure && sent === 0
+            ? firstFailure
+            : `Delivered ${sent} · failed ${failed} · skipped ${skipped}. Check your admin inbox and spam.`,
       })
       if (sent > 0) {
         setEmailOpen(false)

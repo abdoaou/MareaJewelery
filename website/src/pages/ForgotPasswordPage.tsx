@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api } from '../services/api'
 
+const cleanEmail = (value: string) =>
+  value.replace(/[\s\u200e\u200f\u202a-\u202e]/g, '').replace(/＠/g, '@')
+
 export default function ForgotPasswordPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -14,9 +17,10 @@ export default function ForgotPasswordPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    const normalized = cleanEmail(email)
     try {
-      await api.forgotPassword(email)
-      navigate('/reset-password', { state: { email } })
+      await api.forgotPassword(normalized)
+      navigate('/reset-password', { state: { email: normalized } })
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.forgotFailed'))
     } finally {
@@ -35,8 +39,11 @@ export default function ForgotPasswordPage() {
           {t('auth.email')}
           <input
             type="email"
+            dir="ltr"
+            inputMode="email"
+            autoComplete="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => setEmail(cleanEmail(e.target.value))}
             required
             className="mt-1 w-full rounded-lg border border-marea-border bg-marea-bg px-4 py-3 outline-none focus:border-marea-gold"
           />

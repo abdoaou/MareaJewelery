@@ -1,7 +1,7 @@
 import prisma from '../../config/prisma.js'
 import { AppError, ValidationError } from '../../shared/errors/AppError.js'
 import { notifyAdmin } from '../../sockets/index.js'
-import { sendEmail, isEmailConfigured } from '../../shared/services/email.service.js'
+import { sendEmail, sendBulkEmails, assertEmailConfigured as checkEmailConfigured } from '../../shared/services/email.service.js'
 import { personalize, plainTextToHtml, wrapBroadcastEmail } from '../../shared/services/email.templates.js'
 import { logger } from '../../shared/utils/logger.js'
 import { cacheGet, cacheSet } from '../../config/redis.js'
@@ -15,12 +15,10 @@ function isDeliverableEmail(email) {
 }
 
 function assertEmailConfigured() {
-  if (!isEmailConfigured()) {
-    throw new AppError(
-      'Email is not configured on the server. Add BREVO_API_KEY and EMAIL_FROM in Railway variables.',
-      503,
-      'EMAIL_NOT_CONFIGURED',
-    )
+  try {
+    checkEmailConfigured()
+  } catch (err) {
+    throw new AppError(err.message, 503, 'EMAIL_NOT_CONFIGURED')
   }
 }
 
@@ -373,38 +371,28 @@ export const adminService = {
 
     if (!customers.length) throw new ValidationError('No customers found to email')
 
-    let sent = 0
-    let skipped = 0
-    const failures = []
+    const deliverable = customers.filter((c) => isDeliverableEmail(c.email))
+    const skipped = customers.length - deliverable.length
 
-    for (const customer of customers) {
-      if (!isDeliverableEmail(customer.email)) {
-        skipped++
-        continue
-      }
+    if (!deliverable.length) {
+      throw new ValidationError(
+        `No deliverable customer emails found (${skipped} skipped as invalid or test addresses).`,
+      )
+    }
 
+    const messages = deliverable.map((customer) => {
       const bodyText = personalize(trimmedMessage, customer.firstName)
       const bodyHtml = plainTextToHtml(bodyText)
       const html = wrapBroadcastEmail({ firstName: customer.firstName, bodyHtml })
-
-      try {
-        await sendEmail({
-          to: customer.email,
-          subject: trimmedSubject,
-          html,
-          text: bodyText,
-        })
-        sent++
-        // Brief pause so Brevo / SMTP is less likely to throttle bulk sends
-        await new Promise((r) => setTimeout(r, 250))
-      } catch (err) {
-        logger.error('[Broadcast email failed]', {
-          to: customer.email,
-          error: err.message,
-        })
-        failures.push({ email: customer.email, error: err.message })
+      return {
+        to: customer.email,
+        subject: trimmedSubject,
+        html,
+        text: bodyText,
       }
-    }
+    })
+
+    const { sent, failures } = await sendBulkEmails(messages)
 
     await prisma.adminLog
       .create({
@@ -423,10 +411,9 @@ export const adminService = {
       })
       .catch(() => {})
 
-    if (sent === 0 && failures.length) {
-      throw new ValidationError(
-        `Could not send any emails. First error: ${failures[0].error}`,
-      )
+    if (sent === 0) {
+      const detail = failures[0]?.error || 'Unknown error'
+      throw new ValidationError(`Could not send any emails. ${detail}`)
     }
 
     // Send the admin a copy so they can confirm delivery (and check spam)
