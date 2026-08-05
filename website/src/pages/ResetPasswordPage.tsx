@@ -10,7 +10,7 @@ export default function ResetPasswordPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
-  const stateEmail = (location.state as { email?: string } | null)?.email || ''
+  const stateEmail = (location.state as { email?: string; codeSent?: boolean } | null)?.email || ''
 
   const [email, setEmail] = useState(stateEmail)
   const [code, setCode] = useState('')
@@ -19,7 +19,9 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
-  const [info, setInfo] = useState(stateEmail ? t('auth.resetCodeSent') : '')
+  const [info, setInfo] = useState(
+    (location.state as { codeSent?: boolean } | null)?.codeSent ? t('auth.resetCodeSent') : '',
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,7 +62,12 @@ export default function ResetPasswordPage() {
         <h1 className="font-serif text-2xl">{t('auth.resetTitle')}</h1>
         <p className="mt-3 text-sm text-marea-muted">{t('auth.resetSubtitle')}</p>
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
-        {info && <p className="mt-4 text-sm text-marea-gold">{info}</p>}
+        {info && (
+          <div className="mt-4 space-y-1">
+            <p className="text-sm text-marea-gold">{info}</p>
+            <p className="text-xs text-marea-muted">{t('auth.resetCodeSpam')}</p>
+          </div>
+        )}
 
         <label className="mt-6 block text-sm text-marea-muted">
           {t('auth.email')}

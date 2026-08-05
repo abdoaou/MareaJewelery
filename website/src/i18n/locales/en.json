@@ -257,6 +257,7 @@
     "resetFailed": "Could not reset password",
     "resetSuccess": "Password updated. You can sign in now.",
     "resetCodeSent": "A reset code has been sent to your email.",
+    "resetCodeSpam": "Check your inbox and spam folder. The sender is Marea Jewelry.",
     "resendResetCode": "Resend code",
     "passwordMismatch": "Passwords do not match",
     "verifyTitle": "Verify your email",

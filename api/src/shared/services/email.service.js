@@ -4,6 +4,9 @@ import { logger } from '../utils/logger.js'
 
 let transporter = null
 
+const BREVO_FAIL_EVENTS = new Set(['blocked', 'hardBounces', 'invalid', 'error'])
+const BREVO_OK_EVENTS = new Set(['delivered', 'opened', 'clicks', 'uniqueOpened'])
+
 function normalizeFrom(from) {
   if (!from) return 'Marea Jewelry <noreply@marea.com>'
   const cleaned = String(from).trim().replace(/^["']|["']$/g, '')
@@ -13,22 +16,84 @@ function normalizeFrom(from) {
 function getValidBrevoApiKey() {
   const key = env.email.brevoApiKey?.trim()
   if (!key) return null
-  // xsmtpsib- is the SMTP password, not the HTTP API key
   if (key.startsWith('xsmtpsib-')) return null
   return key
 }
 
+function parseFrom(from) {
+  const normalized = normalizeFrom(from)
+  const match = /^(.*?)\s*<(.+)>$/.exec(normalized)
+  if (match) return { name: match[1].trim() || 'Marea Jewelry', email: match[2].trim() }
+  return { name: 'Marea Jewelry', email: normalized }
+}
+
+function formatDeliverabilityError(reason, to) {
+  const r = String(reason || '')
+  if (r.includes('Gmail') || r.includes('rate limit') || r.includes('unsolicited')) {
+    return (
+      'Gmail blocked this email (Brevo spam/rate limit). Fix: In Brevo verify your domain (Senders → Domains), ' +
+      'set EMAIL_FROM to info@marea.com (not @gmail.com), wait 24 hours, then try again. Also check spam folder.'
+    )
+  }
+  if (r.includes('blocked') || r.includes('550')) {
+    return `Email to ${to} was blocked by the mail provider. Verify your sender domain in Brevo.`
+  }
+  return `Email to ${to} was rejected: ${r.slice(0, 220)}`
+}
+
+/** After Brevo accepts (201), poll logs — Gmail often blocks async without failing the API call. */
+async function waitForBrevoDelivery({ to, subject, apiKey, sentAtMs }) {
+  const deadline = Date.now() + 12_000
+  await new Promise((r) => setTimeout(r, 2500))
+
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch(
+        `https://api.brevo.com/v3/smtp/statistics/events?email=${encodeURIComponent(to)}&limit=8&sort=desc`,
+        { headers: { 'api-key': apiKey, Accept: 'application/json' } },
+      )
+      if (!res.ok) break
+
+      const data = await res.json()
+      const recent = (data.events || []).filter(
+        (e) =>
+          e.subject === subject &&
+          new Date(e.date).getTime() >= sentAtMs - 3000,
+      )
+
+      for (const e of recent) {
+        if (BREVO_FAIL_EVENTS.has(e.event)) {
+          throw new Error(formatDeliverabilityError(e.reason || e.event, to))
+        }
+        if (e.event === 'deferred' && e.reason) {
+          throw new Error(formatDeliverabilityError(e.reason, to))
+        }
+        if (BREVO_OK_EVENTS.has(e.event)) return
+      }
+    } catch (err) {
+      if (err.message.includes('Gmail') || err.message.includes('blocked') || err.message.includes('rejected')) {
+        throw err
+      }
+    }
+    await new Promise((r) => setTimeout(r, 2000))
+  }
+
+  const sender = parseFrom(env.email.from)
+  if (sender.email.endsWith('@gmail.com') || sender.email.endsWith('@googlemail.com')) {
+    throw new Error(formatDeliverabilityError('Gmail blocks @gmail.com senders sent through Brevo', to))
+  }
+  logger.warn('[Email delivery unconfirmed]', { to, subject })
+}
+
 export function getEmailSetupHint() {
   if (env.nodeEnv === 'production') {
-    return 'Email is not configured for production. In Railway, set BREVO_API_KEY (xkeysib-... from Brevo → API Keys) and EMAIL_FROM.'
+    return 'Email is not configured for production. In Railway, set BREVO_API_KEY (xkeysib-...) and EMAIL_FROM (use a verified domain email like info@marea.com, not @gmail.com).'
   }
   return 'Set BREVO_API_KEY (xkeysib-...) or SMTP_* in api/.env'
 }
 
-/** True when a working email transport is available. */
 export function isEmailConfigured() {
   if (getValidBrevoApiKey()) return true
-  // SMTP ports are blocked on most PaaS hosts (Railway, etc.)
   if (env.nodeEnv === 'production') return false
   return Boolean(env.email.host && env.email.user && env.email.pass)
 }
@@ -42,6 +107,12 @@ export function assertEmailConfigured() {
   }
   if (!isEmailConfigured()) {
     throw new Error(getEmailSetupHint())
+  }
+  const sender = parseFrom(env.email.from)
+  if (getValidBrevoApiKey() && sender.email.endsWith('@gmail.com')) {
+    logger.warn(
+      '[Email] Using a @gmail.com sender with Brevo often causes Gmail to block delivery. Verify marea.com in Brevo and use info@marea.com as EMAIL_FROM.',
+    )
   }
 }
 
@@ -64,16 +135,24 @@ function getTransporter() {
   return transporter
 }
 
-function parseFrom(from) {
-  const normalized = normalizeFrom(from)
-  const match = /^(.*?)\s*<(.+)>$/.exec(normalized)
-  if (match) return { name: match[1].trim() || 'Marea Jewelry', email: match[2].trim() }
-  return { name: 'Marea Jewelry', email: normalized }
-}
-
 async function sendViaBrevoApi({ to, subject, html, text }) {
   const apiKey = getValidBrevoApiKey()
   if (!apiKey) throw new Error('Brevo API key is missing or invalid')
+
+  const sender = parseFrom(env.email.from)
+  const replyTo = env.email.replyTo ? parseFrom(env.email.replyTo) : null
+  const sentAtMs = Date.now()
+
+  const payload = {
+    sender,
+    to: [{ email: to }],
+    subject,
+    htmlContent: html,
+    textContent: text,
+  }
+  if (replyTo && replyTo.email !== sender.email) {
+    payload.replyTo = { email: replyTo.email, name: replyTo.name }
+  }
 
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
@@ -82,24 +161,20 @@ async function sendViaBrevoApi({ to, subject, html, text }) {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
-    body: JSON.stringify({
-      sender: parseFrom(env.email.from),
-      to: [{ email: to }],
-      subject,
-      htmlContent: html,
-      textContent: text,
-    }),
+    body: JSON.stringify(payload),
   })
   if (!res.ok) {
     const body = await res.text().catch(() => '')
     throw new Error(`Brevo API ${res.status}: ${body.slice(0, 300)}`)
   }
   const json = await res.json().catch(() => ({}))
-  logger.info('[Email sent via Brevo API]', { to, subject, messageId: json.messageId })
+  logger.info('[Email accepted by Brevo]', { to, subject, messageId: json.messageId })
+
+  await waitForBrevoDelivery({ to, subject, apiKey, sentAtMs })
+  logger.info('[Email delivered via Brevo API]', { to, subject, messageId: json.messageId })
   return json
 }
 
-/** Send many personalized emails in few Brevo API calls (avoids HTTP timeouts on broadcast). */
 export async function sendBulkEmails(messages) {
   assertEmailConfigured()
   if (!messages.length) return { sent: 0, failures: [] }
@@ -109,7 +184,6 @@ export async function sendBulkEmails(messages) {
     return sendBulkViaBrevoApi(messages, apiKey)
   }
 
-  // Local dev fallback: one SMTP message at a time
   let sent = 0
   const failures = []
   for (const msg of messages) {
@@ -156,11 +230,9 @@ async function sendBulkViaBrevoApi(messages, apiKey) {
       if (!res.ok) {
         const body = await res.text().catch(() => '')
         const errMsg = `Brevo API ${res.status}: ${body.slice(0, 300)}`
-        logger.error('[Bulk email chunk failed]', { chunkSize: chunk.length, error: errMsg })
         for (const m of chunk) failures.push({ email: m.to, error: errMsg })
       } else {
         sent += chunk.length
-        logger.info('[Bulk email chunk sent]', { count: chunk.length })
       }
     } catch (err) {
       for (const m of chunk) failures.push({ email: m.to, error: err.message })
@@ -195,7 +267,6 @@ async function sendOnce({ to, subject, html, text }) {
   return info
 }
 
-/** Send email with retries so the first auth code is delivered reliably. */
 export async function sendEmail({ to, subject, html, text }, { retries = 3 } = {}) {
   let lastError
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -203,14 +274,7 @@ export async function sendEmail({ to, subject, html, text }, { retries = 3 } = {
       return await sendOnce({ to, subject, html, text })
     } catch (err) {
       lastError = err
-      logger.error('[Email failed]', {
-        to,
-        subject,
-        from: env.email.from,
-        attempt,
-        retries,
-        error: err.message,
-      })
+      logger.error('[Email failed]', { to, subject, attempt, retries, error: err.message })
       transporter = null
       if (attempt < retries) {
         await new Promise((r) => setTimeout(r, 400 * attempt))

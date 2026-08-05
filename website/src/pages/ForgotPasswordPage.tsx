@@ -20,7 +20,7 @@ export default function ForgotPasswordPage() {
     const normalized = cleanEmail(email)
     try {
       await api.forgotPassword(normalized)
-      navigate('/reset-password', { state: { email: normalized } })
+      navigate('/reset-password', { state: { email: normalized, codeSent: true } })
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.forgotFailed'))
     } finally {

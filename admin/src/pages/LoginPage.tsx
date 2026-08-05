@@ -7,7 +7,7 @@ import { unlockNotificationAudio } from '../utils/notificationSound'
 
 export function LoginPage() {
   const [email, setEmail] = useState('admin@marea.com')
-  const [password, setPassword] = useState('Admin@123')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const login = useAuthStore((s) => s.login)
@@ -52,7 +52,6 @@ export function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <p className="mt-1 text-xs text-white/40">Default: Admin@123</p>
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}
           <button type="submit" className="btn-primary w-full" disabled={loading}>

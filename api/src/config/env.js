@@ -8,6 +8,11 @@ dotenv.config({ path: path.join(__dirname, '../../.env') })
 dotenv.config({ path: path.join(__dirname, '../../.env.local') })
 dotenv.config({ path: path.join(__dirname, '../../../.env') })
 
+/** Railway raw editor often stores literal quote characters around values. */
+function cleanEnv(value) {
+  if (value == null || value === '') return value
+  return String(value).trim().replace(/^["']+|["']+$/g, '')
+}
 
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -28,13 +33,14 @@ export const env = {
     origin: process.env.CORS_ORIGIN?.split(',') || '*',
   },
   email: {
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-    from: process.env.EMAIL_FROM || 'noreply@marea.com',
+    host: cleanEnv(process.env.SMTP_HOST),
+    port: Number(cleanEnv(process.env.SMTP_PORT)) || 587,
+    user: cleanEnv(process.env.SMTP_USER),
+    pass: cleanEnv(process.env.SMTP_PASS),
+    from: cleanEnv(process.env.EMAIL_FROM) || 'noreply@marea.com',
+    replyTo: cleanEnv(process.env.EMAIL_REPLY_TO) || cleanEnv(process.env.EMAIL_FROM) || '',
     /** Brevo HTTP API key (xkeysib-...). Preferred over SMTP: works on hosts that block SMTP ports (e.g. Railway). */
-    brevoApiKey: process.env.BREVO_API_KEY || '',
+    brevoApiKey: cleanEnv(process.env.BREVO_API_KEY) || '',
   },
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
   adminUrl: process.env.ADMIN_URL || 'http://localhost:5175',

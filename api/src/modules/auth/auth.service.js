@@ -221,7 +221,12 @@ export const authService = {
 
     const normalized = String(email || '').trim().toLowerCase()
     const user = await authRepository.findByEmail(normalized)
-    if (!user) return { message: 'If the email exists, a reset code was sent', emailSent: true }
+    if (!user) {
+      return {
+        message: 'If the email exists, a reset code was sent',
+        emailSent: false,
+      }
+    }
 
     const reset = await authRepository.createPasswordReset(normalized)
     try {
