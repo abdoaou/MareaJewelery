@@ -225,6 +225,8 @@
     "placeOrder": "Place Order",
     "subtotal": "Subtotal",
     "deliveryNote": "This total does not include delivery charges. Delivery fees will be confirmed when we contact you.",
+    "deliveryAcknowledge": "I understand that this total does not include delivery charges. Delivery fees will be confirmed when you contact me.",
+    "deliveryAcknowledgeRequired": "Please confirm that you understand delivery charges are not included in this total.",
     "success": "Order placed! We'll contact you soon.",
     "redirectingLogin": "Redirecting to sign in…",
     "redirectingCart": "Redirecting to cart…",

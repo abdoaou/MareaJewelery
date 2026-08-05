@@ -41,6 +41,7 @@ export default function CheckoutPage() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [deliveryAcknowledged, setDeliveryAcknowledged] = useState(false)
 
   const setLocation = () => {
     if (!navigator.geolocation) return
@@ -55,6 +56,10 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!deliveryAcknowledged) {
+      setError(t('checkout.deliveryAcknowledgeRequired'))
+      return
+    }
     setLoading(true)
     setError('')
     try {
@@ -102,8 +107,20 @@ export default function CheckoutPage() {
           <span className="text-marea-muted">{t('checkout.subtotal')}</span>
           <span className="price-en font-medium text-marea-cream">{formatPrice(subtotal)}</span>
         </div>
-        <p className="mt-3 text-sm text-marea-muted">{t('checkout.deliveryNote')}</p>
       </div>
+
+      <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-marea-border bg-marea-bg-card p-4">
+        <input
+          type="checkbox"
+          checked={deliveryAcknowledged}
+          onChange={(e) => {
+            setDeliveryAcknowledged(e.target.checked)
+            if (e.target.checked) setError('')
+          }}
+          className="mt-1 h-4 w-4 shrink-0 accent-marea-gold"
+        />
+        <span className="text-sm text-marea-cream">{t('checkout.deliveryAcknowledge')}</span>
+      </label>
 
       {error && <p className="mt-4 text-red-400">{error}</p>}
 
@@ -141,7 +158,7 @@ export default function CheckoutPage() {
           </button>
         </div>
 
-        <button type="submit" disabled={loading} className="btn-primary w-full">
+        <button type="submit" disabled={loading || !deliveryAcknowledged} className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50">
           {loading ? t('common.loading') : t('checkout.placeOrder')}
         </button>
       </form>
