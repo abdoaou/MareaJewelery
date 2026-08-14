@@ -6,17 +6,15 @@ providers = ["node"]
 nixPkgs = ["nodejs_22", "openssl"]
 
 [phases.install]
-cmds = ["npm ci"]
+# Install devDependencies too (vite, typescript) — NODE_ENV must not be production here
+cmds = ["npm ci --include=dev"]
 
 [phases.build]
 cmds = [
   "npx prisma generate --schema=api/prisma/schema.prisma",
-  "npm run build -w website",
-  "npm run build:hosted -w admin",
+  "NODE_OPTIONS=--max-old-space-size=4096 npm run build -w website",
+  "NODE_OPTIONS=--max-old-space-size=4096 npm run build:hosted -w admin",
 ]
 
 [start]
-cmd = "npm run start -w api"
-
-[variables]
-NODE_ENV = "production"
+cmd = "NODE_ENV=production npm run start -w api"

@@ -50,6 +50,7 @@ export function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
   const [sort, setSort] = useState<SortOption>('newest')
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
@@ -72,6 +73,7 @@ export function ProductsPage() {
       sortOrder,
     }
     if (search) params.search = search
+    if (categoryFilter) params.categoryId = categoryFilter
     productsApi
       .list(params)
       .then((r) => {
@@ -79,7 +81,7 @@ export function ProductsPage() {
         setTotal(r.meta?.total || 0)
       })
       .finally(() => setLoading(false))
-  }, [search, sort, page])
+  }, [search, categoryFilter, sort, page])
 
   useEffect(() => {
     const t = setTimeout(load, 300)
@@ -336,6 +338,21 @@ export function ProductsPage() {
           </div>
           <select
             className="input"
+            value={categoryFilter}
+            onChange={(e) => {
+              setCategoryFilter(e.target.value)
+              setPage(1)
+            }}
+          >
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <select
+            className="input"
             value={sort}
             onChange={(e) => {
               setSort(e.target.value as SortOption)
@@ -357,7 +374,10 @@ export function ProductsPage() {
         {loading ? (
           <div className="space-y-3 p-4">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14" />)}</div>
         ) : products.length === 0 ? (
-          <EmptyState title="No products" description="Create your first product" />
+          <EmptyState
+            title="No products"
+            description={categoryFilter || search ? 'Try a different filter or search' : 'Create your first product'}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
