@@ -14,6 +14,8 @@ function listCacheKey(query) {
     newArrival: query.newArrival ?? '',
     recommended: query.recommended ?? '',
     excludeId: query.excludeId || '',
+    sortBy: query.sortBy || 'createdAt',
+    sortOrder: query.sortOrder || 'desc',
   })}`
 }
 
@@ -31,7 +33,12 @@ export const productRepository = {
       newArrival,
       recommended,
       excludeId,
+      sortBy: sortByParam,
+      sortOrder: sortOrderParam,
     } = query
+
+    const sortBy = sortByParam === 'price' ? 'price' : 'createdAt'
+    const sortOrder = sortOrderParam === 'asc' ? 'asc' : 'desc'
 
     const cacheKey = listCacheKey(query)
     const cached = await cacheGet(cacheKey)
@@ -75,6 +82,7 @@ export const productRepository = {
         isNewArrival: true,
         isRecommended: true,
         createdAt: true,
+        viewCount: true,
         categoryId: true,
         images: {
           orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }],
@@ -83,15 +91,14 @@ export const productRepository = {
         },
         category: { select: { id: true, name: true, slug: true } },
         inventory: { select: { currentStock: true, reservedStock: true } },
+        _count: { select: { orderItems: true } },
       },
       skip: (pageNum - 1) * limitNum,
       take: limitNum,
-      orderBy: [
-        ...(recommended === 'true' || recommended === true
-          ? [{ isRecommended: 'desc' }, { isBestSeller: 'desc' }]
-          : []),
-        { createdAt: 'desc' },
-      ],
+      orderBy:
+        recommended === 'true' || recommended === true
+          ? [{ isRecommended: 'desc' }, { isBestSeller: 'desc' }, { [sortBy]: sortOrder }]
+          : [{ [sortBy]: sortOrder }],
     })
     const total = await prisma.product.count({ where })
 

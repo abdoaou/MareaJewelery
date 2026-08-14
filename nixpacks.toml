@@ -1,6 +1,9 @@
-# Railway / Nixpacks: build storefront + admin, then run API which serves them
+# Dokploy / Railway / Nixpacks — monorepo: build website + admin, run API
+providers = ["node"]
+
 [phases.setup]
-nixPkgs = ["openssl"]
+# Must include Node.js — setup-only openssl removes npm from PATH (causes exit 127)
+nixPkgs = ["nodejs_22", "openssl"]
 
 [phases.install]
 cmds = ["npm ci"]
@@ -14,3 +17,6 @@ cmds = [
 
 [start]
 cmd = "npm run start -w api"
+
+[variables]
+NODE_ENV = "production"

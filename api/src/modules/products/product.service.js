@@ -7,7 +7,29 @@ import prisma from '../../config/prisma.js'
 const MAX_PRODUCT_IMAGES = 5
 
 function slugify(text) {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+}
+
+async function ensureUniqueSlug(base, excludeId) {
+  const root = slugify(base) || `product-${Date.now()}`
+  let candidate = root
+  let n = 2
+  while (n < 200) {
+    const existing = await prisma.product.findFirst({
+      where: {
+        slug: candidate,
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+      select: { id: true },
+    })
+    if (!existing) return candidate
+    candidate = `${root}-${n}`
+    n += 1
+  }
+  return `${root}-${Date.now()}`
 }
 
 export const productService = {
@@ -24,9 +46,10 @@ export const productService = {
   },
   create: async (data) => {
     const { initialStock, ...productData } = data
+    const slug = await ensureUniqueSlug(data.slug || data.name)
     const product = await productRepository.create({
       ...productData,
-      slug: data.slug || slugify(data.name),
+      slug,
       tags: data.tags || [],
       status: data.status || 'PUBLISHED',
     })
@@ -52,8 +75,13 @@ export const productService = {
     return productRepository.findById(product.id)
   },
   update: async (id, data) => {
-    await productService.getById(id)
+    const existing = await productService.getById(id)
     const { initialStock: _stock, ...productData } = data
+    if (productData.slug !== undefined) {
+      const next = slugify(productData.slug)
+      productData.slug =
+        next && next !== existing.slug ? await ensureUniqueSlug(next, id) : existing.slug
+    }
     const product = await productRepository.update(id, productData)
     await invalidateProductCache()
     return product

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { format } from 'date-fns'
 import { Plus, Pencil, Trash2, Copy, Search, Upload, Star, X, ImageIcon } from 'lucide-react'
 import { productsApi, categoriesApi } from '../services/api'
 import type { Product, Category } from '../types'
@@ -8,6 +9,22 @@ import { EmptyState, Skeleton } from '../components/ui/EmptyState'
 
 const MAX_IMAGES = 5
 const MIN_IMAGES = 1
+const PAGE_SIZE = 15
+
+type SortOption = 'newest' | 'oldest' | 'price-asc' | 'price-desc'
+
+function sortParams(sort: SortOption): { sortBy: string; sortOrder: string } {
+  switch (sort) {
+    case 'oldest':
+      return { sortBy: 'createdAt', sortOrder: 'asc' }
+    case 'price-asc':
+      return { sortBy: 'price', sortOrder: 'asc' }
+    case 'price-desc':
+      return { sortBy: 'price', sortOrder: 'desc' }
+    default:
+      return { sortBy: 'createdAt', sortOrder: 'desc' }
+  }
+}
 
 const emptyForm = {
   name: '',
@@ -33,6 +50,9 @@ export function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<SortOption>('newest')
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
   const [modal, setModal] = useState<'create' | 'edit' | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [editId, setEditId] = useState<string | null>(null)
@@ -44,10 +64,22 @@ export function ProductsPage() {
 
   const load = useCallback(() => {
     setLoading(true)
-    const params: Record<string, string> = { limit: '50' }
+    const { sortBy, sortOrder } = sortParams(sort)
+    const params: Record<string, string> = {
+      page: String(page),
+      limit: String(PAGE_SIZE),
+      sortBy,
+      sortOrder,
+    }
     if (search) params.search = search
-    productsApi.list(params).then((r) => setProducts(r.data || [])).finally(() => setLoading(false))
-  }, [search])
+    productsApi
+      .list(params)
+      .then((r) => {
+        setProducts(r.data || [])
+        setTotal(r.meta?.total || 0)
+      })
+      .finally(() => setLoading(false))
+  }, [search, sort, page])
 
   useEffect(() => {
     const t = setTimeout(load, 300)
@@ -292,8 +324,29 @@ export function ProductsPage() {
         <div className="toolbar">
           <div className="relative">
             <Search className="absolute top-1/2 left-3 -translate-y-1/2 text-subtle" size={14} />
-            <input className="input pl-8" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input
+              className="input pl-8"
+              placeholder="Search…"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setPage(1)
+              }}
+            />
           </div>
+          <select
+            className="input"
+            value={sort}
+            onChange={(e) => {
+              setSort(e.target.value as SortOption)
+              setPage(1)
+            }}
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="price-asc">Price: low to high</option>
+            <option value="price-desc">Price: high to low</option>
+          </select>
           <button type="button" className="btn-primary flex items-center gap-2" onClick={openCreate}>
             <Plus size={16} /> Add Product
           </button>
@@ -315,6 +368,7 @@ export function ProductsPage() {
                   <th className="table-th">Category</th>
                   <th className="table-th">Stock</th>
                   <th className="table-th">Price</th>
+                  <th className="table-th">Added</th>
                   <th className="table-th">Views</th>
                   <th className="table-th">Sales</th>
                   <th className="table-th">Status</th>
@@ -357,7 +411,8 @@ export function ProductsPage() {
                           `$${Number(p.price).toFixed(2)}`
                         )}
                       </td>
-                      <td className="table-td">{p.viewCount}</td>
+                      <td className="table-td text-muted">{format(new Date(p.createdAt), 'MMM d, yyyy')}</td>
+                      <td className="table-td">{p.viewCount ?? 0}</td>
                       <td className="table-td">{p._count?.orderItems ?? 0}</td>
                       <td className="table-td"><Badge status={p.status} /></td>
                       <td className="table-td">
@@ -375,6 +430,25 @@ export function ProductsPage() {
           </div>
         )}
       </div>
+
+      {total > PAGE_SIZE && (
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          <button type="button" className="btn-ghost" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            Previous
+          </button>
+          <span className="px-3 py-2 text-sm text-white/50">
+            Page {page} of {Math.ceil(total / PAGE_SIZE)}
+          </span>
+          <button
+            type="button"
+            className="btn-ghost"
+            disabled={page * PAGE_SIZE >= total}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </button>
+        </div>
+      )}
 
       <Modal open={!!modal} onClose={closeModal} title={modal === 'create' ? 'New Product' : 'Edit Product'} wide>
         <div className="grid gap-4 sm:grid-cols-2">
