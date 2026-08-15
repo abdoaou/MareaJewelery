@@ -13,7 +13,7 @@ cmds = ["npm ci --include=dev --ignore-scripts"]
 cmds = [
   "npx prisma generate --schema=api/prisma/schema.prisma",
   "NODE_OPTIONS=--max-old-space-size=4096 npm run build -w website",
-  "NODE_OPTIONS=--max-old-space-size=4096 npm run build:hosted -w admin",
+  "NODE_OPTIONS=--max-old-space-size=4096 npm run build:subdomain -w admin",
 ]
 
 [start]

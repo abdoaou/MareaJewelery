@@ -33,9 +33,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function adminBasename() {
   const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
-  // Production is hosted at /admin; keep router under that path
   if (base && base !== '/') return base
-  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) return '/admin'
   return undefined
 }
 

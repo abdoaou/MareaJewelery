@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:hosted": "tsc -b && vite build --base=/admin/",
+    "build:subdomain": "tsc -b && vite build --base=/",
     "preview": "vite preview"
   },
   "dependencies": {

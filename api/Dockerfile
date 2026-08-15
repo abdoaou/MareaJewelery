@@ -19,7 +19,7 @@ ENV NODE_ENV=development
 COPY . .
 ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npm run build -w website
-RUN npm run build:hosted -w admin
+RUN npm run build:subdomain -w admin
 
 FROM base AS runner
 ENV NODE_ENV=production
