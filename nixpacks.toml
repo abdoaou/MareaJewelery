@@ -7,7 +7,7 @@ nixPkgs = ["nodejs_22", "openssl"]
 
 [phases.install]
 # Install devDependencies too (vite, typescript) — NODE_ENV must not be production here
-cmds = ["npm ci --include=dev"]
+cmds = ["npm ci --include=dev --ignore-scripts"]
 
 [phases.build]
 cmds = [

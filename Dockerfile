@@ -10,7 +10,7 @@ COPY api/package.json ./api/
 COPY website/package.json ./website/
 COPY admin/package.json ./admin/
 COPY api/prisma ./api/prisma/
-RUN npm ci --include=dev
+RUN npm ci --include=dev --ignore-scripts
 RUN npx prisma generate --schema=api/prisma/schema.prisma
 
 FROM deps AS build
