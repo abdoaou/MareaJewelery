@@ -63,8 +63,8 @@ export function ProductsPage() {
   const [error, setError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const load = useCallback(() => {
-    setLoading(true)
+  const load = useCallback((silent = false) => {
+    if (!silent) setLoading(true)
     const { sortBy, sortOrder } = sortParams(sort)
     const params: Record<string, string> = {
       page: String(page),
@@ -80,8 +80,22 @@ export function ProductsPage() {
         setProducts(r.data || [])
         setTotal(r.meta?.total || 0)
       })
-      .finally(() => setLoading(false))
+      .finally(() => {
+        if (!silent) setLoading(false)
+      })
   }, [search, categoryFilter, sort, page])
+
+  async function refreshProductInList(productId: string) {
+    const res = await productsApi.get(productId)
+    if (!res.data) return
+    setProducts((prev) => {
+      const idx = prev.findIndex((p) => p.id === productId)
+      if (idx < 0) return prev
+      const next = [...prev]
+      next[idx] = res.data
+      return next
+    })
+  }
 
   useEffect(() => {
     const t = setTimeout(load, 300)
@@ -263,37 +277,62 @@ export function ProductsPage() {
         payload.initialStock = Number(form.initialStock)
       }
 
+      const uploadPromise = pendingImages.length
+        ? productsApi.upload(pendingImages.map((p) => p.file))
+        : Promise.resolve(null)
+
       let productId = editId
       if (modal === 'create') {
-        const res = await productsApi.create(payload)
-        productId = res.data.id
+        const [createRes, uploaded] = await Promise.all([
+          productsApi.create(payload),
+          uploadPromise,
+        ])
+        productId = createRes.data.id
+        if (uploaded?.length) {
+          await productsApi.addImages(
+            productId,
+            uploaded.map((u, i) => ({
+              url: u.url,
+              isPrimary: primaryKey === `pending:${pendingImages[i].localId}`,
+              sortOrder: existingImages.length + i,
+            })),
+          )
+        }
       } else if (editId) {
-        await productsApi.update(editId, payload)
+        const [, uploaded] = await Promise.all([productsApi.update(editId, payload), uploadPromise])
+        productId = editId
+        if (uploaded?.length) {
+          await productsApi.addImages(
+            productId,
+            uploaded.map((u, i) => ({
+              url: u.url,
+              isPrimary: primaryKey === `pending:${pendingImages[i].localId}`,
+              sortOrder: existingImages.length + i,
+            })),
+          )
+        }
       }
 
-      if (pendingImages.length && productId) {
-        const uploaded = await productsApi.upload(pendingImages.map((p) => p.file))
-        await productsApi.addImages(
-          productId,
-          uploaded.map((u, i) => ({
-            url: u.url,
-            isPrimary: primaryKey === `pending:${pendingImages[i].localId}`,
-            sortOrder: existingImages.length + i,
-          })),
-        )
-      }
-
-      if (
-        productId &&
-        primaryKey?.startsWith('existing:') &&
-        modal === 'edit'
-      ) {
+      if (productId && primaryKey?.startsWith('existing:') && modal === 'edit') {
         const imageId = primaryKey.replace('existing:', '')
-        await productsApi.setPrimaryImage(productId, imageId)
+        const currentPrimary = existingImages.find((img) => img.isPrimary)
+        if (currentPrimary?.id !== imageId) {
+          await productsApi.setPrimaryImage(productId, imageId)
+        }
       }
 
+      const savedProductId = productId
+      const wasCreate = modal === 'create'
       closeModal()
-      load()
+      setSaving(false)
+
+      if (savedProductId) {
+        if (wasCreate) {
+          void load(true)
+        } else {
+          void refreshProductInList(savedProductId)
+        }
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save product')
     } finally {

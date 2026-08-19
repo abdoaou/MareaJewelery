@@ -14,14 +14,16 @@ export function InventoryPage() {
   const [adjustRow, setAdjustRow] = useState<InventoryRow | null>(null)
   const [qty, setQty] = useState('')
 
-  function load() {
-    setLoading(true)
+  function load(silent = false) {
+    if (!silent) setLoading(true)
     const params: Record<string, string> = {}
     if (lowOnly) params.lowStock = 'true'
     inventoryApi
       .list(params)
       .then((r) => setItems(r.data?.items || []))
-      .finally(() => setLoading(false))
+      .finally(() => {
+        if (!silent) setLoading(false)
+      })
   }
 
   useEffect(() => { load() }, [lowOnly])
@@ -44,7 +46,7 @@ export function InventoryPage() {
     await inventoryApi.adjust(adjustRow.id, Number(qty), 'Manual adjustment from admin')
     setAdjustRow(null)
     setQty('')
-    load()
+    void load(true)
   }
 
   return (

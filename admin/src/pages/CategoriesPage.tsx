@@ -28,12 +28,14 @@ export function CategoriesPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  function load() {
-    setLoading(true)
+  function load(silent = false) {
+    if (!silent) setLoading(true)
     categoriesApi
       .list()
       .then((r) => setCategories(r.data || []))
-      .finally(() => setLoading(false))
+      .finally(() => {
+        if (!silent) setLoading(false)
+      })
   }
 
   useEffect(() => {
@@ -125,12 +127,22 @@ export function CategoriesPage() {
         image: imageUrl || undefined,
       }
 
-      if (editId) await categoriesApi.update(editId, payload)
-      else await categoriesApi.create(payload)
+      const res = editId
+        ? await categoriesApi.update(editId, payload)
+        : await categoriesApi.create(payload)
 
+      const saved = res.data
+      const parent = form.parentId ? categories.find((c) => c.id === form.parentId) : undefined
       setModal(false)
       resetImageState()
-      load()
+      setSaving(false)
+
+      if (saved) {
+        const merged = { ...saved, parent: parent ? { name: parent.name } : undefined }
+        setCategories((prev) =>
+          editId ? prev.map((c) => (c.id === editId ? { ...c, ...merged } : c)) : [merged, ...prev],
+        )
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save category')
     } finally {

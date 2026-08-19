@@ -45,8 +45,8 @@ export function OrdersPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [createForm, setCreateForm] = useState(emptyCreateForm())
 
-  const load = useCallback(() => {
-    setLoading(true)
+  const load = useCallback((silent = false) => {
+    if (!silent) setLoading(true)
     const params: Record<string, string> = { page: String(page), limit: '15' }
     if (search) params.search = search
     if (status) params.status = status
@@ -57,7 +57,9 @@ export function OrdersPage() {
         setOrders(res.data || [])
         setTotal(res.meta?.total || 0)
       })
-      .finally(() => setLoading(false))
+      .finally(() => {
+        if (!silent) setLoading(false)
+      })
   }, [page, search, status, customerFilter])
 
   useEffect(() => {
@@ -89,11 +91,18 @@ export function OrdersPage() {
   }, [orderIdParam, setSearchParams])
 
   async function updateStatus(id: string, newStatus: string) {
-    await ordersApi.updateStatus(id, newStatus)
-    load()
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o)))
     if (selected?.id === id) {
-      const res = await ordersApi.get(id)
-      setSelected(res.data)
+      setSelected({ ...selected, status: newStatus })
+    }
+    try {
+      await ordersApi.updateStatus(id, newStatus)
+      if (selected?.id === id) {
+        const res = await ordersApi.get(id)
+        if (res.data) setSelected(res.data)
+      }
+    } catch {
+      void load(true)
     }
   }
 
@@ -132,7 +141,7 @@ export function OrdersPage() {
     })
     setCreateOpen(false)
     setCreateForm(emptyCreateForm())
-    load()
+    void load(true)
   }
 
   return (
