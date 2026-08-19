@@ -24,6 +24,10 @@ function itemImage(item?: OrderItem) {
   return item?.product?.images?.[0]?.url
 }
 
+function orderPhone(order: Order) {
+  return order.shippingAddress?.phone || order.user?.phone || '—'
+}
+
 export function OrdersPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const orderIdParam = searchParams.get('orderId')
@@ -178,6 +182,7 @@ export function OrdersPage() {
                   <th className="table-th">Items</th>
                   <th className="table-th">Order</th>
                   <th className="table-th">Customer</th>
+                  <th className="table-th">Phone</th>
                   <th className="table-th">Total</th>
                   <th className="table-th">Status</th>
                   <th className="table-th">Date</th>
@@ -205,6 +210,7 @@ export function OrdersPage() {
                       </td>
                       <td className="table-td font-mono text-xs">{o.orderNumber}</td>
                       <td className="table-td">{o.user?.email || 'Guest'}</td>
+                      <td className="table-td font-mono text-xs text-white/70">{orderPhone(o)}</td>
                       <td className="table-td">${Number(o.total).toFixed(2)}</td>
                       <td className="table-td"><Badge status={o.status} /></td>
                       <td className="table-td text-white/50">{format(new Date(o.createdAt), 'MMM d, yyyy HH:mm')}</td>
@@ -329,6 +335,10 @@ export function OrdersPage() {
               <div>
                 <p className="text-xs text-white/40">Customer</p>
                 <p>{selected.user?.firstName} {selected.user?.lastName} ({selected.user?.email})</p>
+              </div>
+              <div>
+                <p className="text-xs text-white/40">Phone</p>
+                <p className="font-mono text-sm">{orderPhone(selected)}</p>
               </div>
               <div>
                 <p className="text-xs text-white/40">Payment</p>

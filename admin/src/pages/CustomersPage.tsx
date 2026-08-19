@@ -103,7 +103,7 @@ export function CustomersPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Customers</h1>
-          <p className="text-sm text-muted">Customer analytics</p>
+          <p className="text-sm text-muted">{totalCustomers} total customers</p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
           <input
@@ -133,20 +133,24 @@ export function CustomersPage() {
             <table className="table">
               <thead>
                 <tr>
+                  <th className="table-th">#</th>
                   <th className="table-th">Customer</th>
                   <th className="table-th">Email</th>
+                  <th className="table-th">Phone</th>
                   <th className="table-th">Status</th>
                   <th className="table-th">Orders</th>
                   <th className="table-th">Joined</th>
                 </tr>
               </thead>
               <tbody>
-                {customers.map((c) => (
+                {customers.map((c, index) => (
                   <tr key={c.id} className="table-row">
+                    <td className="table-td text-muted">{index + 1}</td>
                     <td className="table-td">
                       {c.firstName} {c.lastName}
                     </td>
                     <td className="table-td">{c.email}</td>
+                    <td className="table-td font-mono text-xs">{c.phone || '—'}</td>
                     <td className="table-td">
                       <Badge status={c.status} />
                     </td>

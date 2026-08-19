@@ -10,6 +10,7 @@ export interface User {
   email: string
   firstName?: string
   lastName?: string
+  phone?: string
   role: string
   status: string
 }
@@ -77,10 +78,10 @@ export interface Order {
   total: string | number
   subtotal: string | number
   createdAt: string
-  shippingAddress?: { city?: string; line1?: string; country?: string }
+  shippingAddress?: { city?: string; line1?: string; country?: string; phone?: string; name?: string }
   customerNotes?: string
   adminNotes?: string
-  user?: { email: string; firstName?: string; lastName?: string }
+  user?: { email: string; firstName?: string; lastName?: string; phone?: string }
   items?: OrderItem[]
   statusHistory?: { status: string; note?: string; createdAt: string }[]
   payments?: { method: string; status: string; amount: string | number }[]

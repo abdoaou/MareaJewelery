@@ -292,7 +292,11 @@ export default function ProductDetailsPage() {
               className="btn-primary flex-1 disabled:opacity-40"
             >
               <ShoppingBag size={16} className="inline me-2" />
-              {adding ? t('common.loading') : t('cart.addToCart')}
+              {product.stock <= 0
+                ? t('cart.soldOut')
+                : adding
+                  ? t('common.loading')
+                  : t('cart.addToCart')}
             </button>
             <button
               type="button"

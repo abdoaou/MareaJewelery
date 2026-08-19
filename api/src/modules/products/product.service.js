@@ -32,6 +32,74 @@ async function ensureUniqueSlug(base, excludeId) {
   return `${root}-${Date.now()}`
 }
 
+async function setProductStock(productId, targetStock) {
+  if (targetStock === undefined || targetStock === null || targetStock === '') return
+
+  const stock = Math.floor(Number(targetStock))
+  if (!Number.isFinite(stock) || stock < 0) {
+    throw new ValidationError('Stock must be a non-negative number')
+  }
+
+  const warehouse = await prisma.warehouse.findFirst({
+    where: { isActive: true },
+    orderBy: { createdAt: 'asc' },
+  })
+  if (!warehouse) return
+
+  const rows = await prisma.inventory.findMany({
+    where: { productId },
+    orderBy: { updatedAt: 'desc' },
+  })
+
+  const currentTotal = rows.reduce((sum, row) => sum + row.currentStock, 0)
+  if (currentTotal === stock) return
+
+  if (!rows.length) {
+    await prisma.inventory.create({
+      data: { productId, warehouseId: warehouse.id, currentStock: stock },
+    })
+    if (stock > 0) {
+      await prisma.stockMovement.create({
+        data: {
+          productId,
+          warehouseId: warehouse.id,
+          oldQty: 0,
+          newQty: stock,
+          difference: stock,
+          reason: 'MANUAL_UPDATE',
+          note: 'Stock set from product edit',
+        },
+      })
+    }
+    return
+  }
+
+  const primary =
+    rows.find((row) => row.warehouseId === warehouse.id) || rows[0]
+
+  for (const row of rows) {
+    const newQty = row.id === primary.id ? stock : 0
+    if (row.currentStock === newQty) continue
+
+    await prisma.inventory.update({
+      where: { id: row.id },
+      data: { currentStock: newQty },
+    })
+
+    await prisma.stockMovement.create({
+      data: {
+        productId,
+        warehouseId: row.warehouseId,
+        oldQty: row.currentStock,
+        newQty,
+        difference: newQty - row.currentStock,
+        reason: 'MANUAL_UPDATE',
+        note: 'Stock set from product edit',
+      },
+    })
+  }
+}
+
 export const productService = {
   list: (query) => productRepository.findMany(query),
   getById: async (id) => {
@@ -76,15 +144,16 @@ export const productService = {
   },
   update: async (id, data) => {
     const existing = await productService.getById(id)
-    const { initialStock: _stock, ...productData } = data
+    const { initialStock, ...productData } = data
     if (productData.slug !== undefined) {
       const next = slugify(productData.slug)
       productData.slug =
         next && next !== existing.slug ? await ensureUniqueSlug(next, id) : existing.slug
     }
-    const product = await productRepository.update(id, productData)
+    await productRepository.update(id, productData)
+    await setProductStock(id, initialStock)
     await invalidateProductCache()
-    return product
+    return productRepository.findById(id)
   },
   remove: async (id) => {
     await productService.getById(id)

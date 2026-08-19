@@ -335,6 +335,7 @@ export const adminService = {
           email: true,
           firstName: true,
           lastName: true,
+          phone: true,
           status: true,
           rewardPoints: true,
           createdAt: true,

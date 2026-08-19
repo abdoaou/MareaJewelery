@@ -183,7 +183,7 @@ export const orderService = {
         where,
         include: {
           ...orderItemsInclude,
-          user: { select: { id: true, email: true, firstName: true, lastName: true } },
+          user: { select: { id: true, email: true, firstName: true, lastName: true, phone: true } },
         },
         orderBy: { createdAt: 'desc' },
         take: limit,

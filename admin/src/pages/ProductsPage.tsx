@@ -126,6 +126,10 @@ export function ProductsPage() {
     setModal('create')
   }
 
+  function stockOf(p: Product) {
+    return p.inventory?.reduce((s, i) => s + i.currentStock, 0) ?? 0
+  }
+
   function openEdit(p: Product) {
     setForm({
       name: p.name,
@@ -137,7 +141,7 @@ export function ProductsPage() {
       status: p.status,
       categoryId: p.category?.id || '',
       tags: (p.tags || []).join(', '),
-      initialStock: '',
+      initialStock: String(stockOf(p)),
       isBestSeller: Boolean(p.isBestSeller),
       isNewArrival: Boolean(p.isNewArrival),
     })
@@ -255,7 +259,7 @@ export function ProductsPage() {
         isBestSeller: form.isBestSeller,
         isNewArrival: form.isNewArrival,
       }
-      if (modal === 'create' && form.initialStock) {
+      if (form.initialStock !== '') {
         payload.initialStock = Number(form.initialStock)
       }
 
@@ -306,10 +310,6 @@ export function ProductsPage() {
   async function duplicate(id: string) {
     await productsApi.duplicate(id)
     load()
-  }
-
-  function stockOf(p: Product) {
-    return p.inventory?.reduce((s, i) => s + i.currentStock, 0) ?? 0
   }
 
   function primaryUrl(p: Product) {
@@ -487,18 +487,18 @@ export function ProductsPage() {
             </select>
             <p className="mt-1 text-xs text-subtle">Only PUBLISHED products appear on the website.</p>
           </div>
-          {modal === 'create' && (
-            <div>
-              <label className="mb-1 block text-xs text-muted">Initial stock</label>
-              <input
-                className="input"
-                type="number"
-                min={0}
-                value={form.initialStock}
-                onChange={(e) => setForm({ ...form, initialStock: e.target.value })}
-              />
-            </div>
-          )}
+          <div>
+            <label className="mb-1 block text-xs text-muted">
+              {modal === 'create' ? 'Initial stock' : 'Stock'}
+            </label>
+            <input
+              className="input"
+              type="number"
+              min={0}
+              value={form.initialStock}
+              onChange={(e) => setForm({ ...form, initialStock: e.target.value })}
+            />
+          </div>
           <div className="flex flex-wrap items-center gap-6 sm:col-span-2">
             <label className="flex items-center gap-2 text-sm text-muted">
               <input
