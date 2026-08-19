@@ -1,9 +1,9 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type ConfigEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 // Hosted on Railway under /admin/; local `vite` dev stays at /
-export default defineConfig(({ command }) => {
+export default defineConfig(({ command }: ConfigEnv) => {
   const base = process.env.VITE_ADMIN_BASE || (command === 'serve' ? '/' : '/admin/')
 
   return {

@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "build:hosted": "tsc -b && vite build --base=/admin/",
-    "build:subdomain": "tsc -b && vite build --base=/",
+    "build": "tsc -p tsconfig.app.json && vite build",
+    "build:hosted": "tsc -p tsconfig.app.json && vite build --base=/admin/",
+    "build:subdomain": "tsc -p tsconfig.app.json && vite build --base=/",
     "preview": "vite preview"
   },
   "dependencies": {
