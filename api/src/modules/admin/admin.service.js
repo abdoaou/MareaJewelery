@@ -68,8 +68,23 @@ export const adminService = {
         SELECT
           (SELECT COUNT(*)::int FROM products WHERE deleted_at IS NULL) AS total_products,
           (SELECT COUNT(*)::int FROM products WHERE deleted_at IS NULL AND status = 'PUBLISHED') AS active_products,
-          (SELECT COUNT(*)::int FROM inventory WHERE current_stock = 0) AS out_of_stock,
-          (SELECT COUNT(*)::int FROM inventory WHERE current_stock > 0 AND current_stock <= 5) AS low_stock,
+          (SELECT COUNT(*)::int FROM (
+            SELECT p.id
+            FROM products p
+            LEFT JOIN inventory i ON i.product_id = p.id
+            WHERE p.deleted_at IS NULL
+            GROUP BY p.id
+            HAVING COALESCE(SUM(i.current_stock), 0) = 0
+          ) out_of_stock_products) AS out_of_stock,
+          (SELECT COUNT(*)::int FROM (
+            SELECT p.id
+            FROM products p
+            LEFT JOIN inventory i ON i.product_id = p.id
+            WHERE p.deleted_at IS NULL
+            GROUP BY p.id
+            HAVING COALESCE(SUM(i.current_stock), 0) > 0
+              AND COALESCE(SUM(i.current_stock), 0) <= 5
+          ) low_stock_products) AS low_stock,
           (SELECT COUNT(*)::int FROM categories WHERE deleted_at IS NULL) AS total_categories,
           (SELECT COUNT(*)::int FROM users WHERE role = 'CUSTOMER' AND status = 'ACTIVE') AS total_customers,
           (SELECT COUNT(*)::int FROM users WHERE role = 'CUSTOMER' AND created_at >= ${today}) AS new_customers_today,
