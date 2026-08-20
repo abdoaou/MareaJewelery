@@ -5,7 +5,7 @@ export const cartRepository = {
     prisma.cart.findFirst({
       where: userId ? { userId } : { sessionId },
       include: {
-        items: { include: { product: { include: { images: true } }, variant: true } },
+        items: { include: { product: { include: { images: true, inventory: { select: { currentStock: true, reservedStock: true } } } }, variant: true } },
       },
     }),
 

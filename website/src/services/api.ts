@@ -4,6 +4,7 @@ import {
   setTokens,
   expireSession,
 } from './authSession'
+import { availableStock } from '../utils/mapProduct'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1'
 const API_KEY = import.meta.env.VITE_API_KEY || ''
@@ -100,6 +101,8 @@ type ApiCart = {
 
       images?: Array<{ url: string; isPrimary?: boolean }>
 
+      inventory?: Array<{ currentStock: number; reservedStock: number }>
+
     }
 
   }>
@@ -164,7 +167,7 @@ function mapCart(cart: ApiCart | null | undefined): CartResponse {
 
         sale_price: item.product.salePrice,
 
-        stock: 99,
+        stock: availableStock(item.product.inventory),
 
         image: img?.url,
 

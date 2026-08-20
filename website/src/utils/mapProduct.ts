@@ -45,8 +45,8 @@ export type ProductDetail = Product & {
   variants: Array<{ id: string; name: string; price?: number; stock?: number }>
 }
 
-function availableStock(inventory?: ApiProduct['inventory']) {
-  if (!inventory?.length) return 99
+export function availableStock(inventory?: ApiProduct['inventory']) {
+  if (!inventory?.length) return 0
   return inventory.reduce((sum, row) => sum + Math.max(0, row.currentStock - row.reservedStock), 0)
 }
 

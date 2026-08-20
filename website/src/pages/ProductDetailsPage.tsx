@@ -186,7 +186,12 @@ export default function ProductDetailsPage() {
     <div className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
       <div className="grid gap-10 lg:grid-cols-2">
         <div>
-          <div className="aspect-square overflow-hidden rounded-2xl border border-marea-border bg-marea-bg-soft">
+          <div className="relative aspect-square overflow-hidden rounded-2xl border border-marea-border bg-marea-bg-soft">
+            {product.stock <= 0 && (
+              <span className="absolute inset-x-0 bottom-0 z-10 bg-marea-bg/80 py-2 text-center text-xs font-semibold uppercase tracking-wider text-red-400 backdrop-blur-sm">
+                {t('cart.soldOut')}
+              </span>
+            )}
             {images[activeImage] ? (
               <img
                 src={images[activeImage]}
