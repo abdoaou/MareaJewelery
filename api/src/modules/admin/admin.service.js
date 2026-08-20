@@ -4,7 +4,7 @@ import { notifyAdmin } from '../../sockets/index.js'
 import { sendEmail, sendBulkEmails, assertEmailConfigured as checkEmailConfigured } from '../../shared/services/email.service.js'
 import { personalize, plainTextToHtml, wrapBroadcastEmail } from '../../shared/services/email.templates.js'
 import { logger } from '../../shared/utils/logger.js'
-import { cacheGet, cacheSet } from '../../config/redis.js'
+import { cacheGet, cacheSet, cacheDel } from '../../config/redis.js'
 
 const PLACEHOLDER_EMAIL_RE = /@(example\.com|example\.org|test\.com|localhost)$/i
 
@@ -127,9 +127,9 @@ export const adminService = {
         averageOrderValue: Math.round(avgOrderValue * 100) / 100,
       },
       visitors: {
-        today: (totalViews % 1000) + 42,
-        thisWeek: (totalViews % 5000) + 312,
-        thisMonth: (totalViews % 20000) + 1840,
+        today: 0,
+        thisWeek: 0,
+        thisMonth: 0,
       },
       inventory: { value: 0 },
     }
@@ -481,5 +481,31 @@ export const adminService = {
       .catch(() => {})
 
     return { sent: 1, to: adminEmail }
+  },
+
+  async resetAnalytics() {
+    await prisma.$transaction([
+      prisma.reviewImage.deleteMany({}),
+      prisma.review.deleteMany({}),
+      prisma.productQuestion.deleteMany({}),
+      prisma.order.deleteMany({}),
+      prisma.notification.deleteMany({}),
+      prisma.recentlyViewed.deleteMany({}),
+      prisma.stockMovement.deleteMany({}),
+      prisma.wishlist.deleteMany({}),
+      prisma.product.updateMany({
+        where: { deletedAt: null },
+        data: { viewCount: 0, likeCount: 0 },
+      }),
+    ])
+
+    await cacheDel('admin:dashboard:*')
+    await cacheDel('products:*')
+
+    return {
+      ordersDeleted: true,
+      engagementReset: true,
+      notificationsCleared: true,
+    }
   },
 }

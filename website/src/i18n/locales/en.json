@@ -4,6 +4,7 @@
     "bestSellers": "Best Sellers",
     "story": "Story",
     "care": "Care",
+    "categories": "Categories",
     "cart": "Cart",
     "login": "Sign In",
     "register": "Register",
@@ -51,7 +52,7 @@
       "label": "The Marea Promise",
       "title": "Luxury is not loud.",
       "titleHighlight": "It is felt in every detail.",
-      "body": "Every Marea piece is made to balance modern minimalism with the emotion of heirloom jewelry — refined enough for ceremony, effortless enough for every day."
+      "body": "Maréa is more than just jewelry — it's about the feeling each piece gives you. We bring together timeless elegance, modern femininity, and quality you can trust, creating pieces designed to become part of your everyday story. Maréa stands for effortless beauty, thoughtful details, and a touch of luxury made for every woman."
     },
     "whyChoose": {
       "label": "Why Choose Marea",
@@ -66,7 +67,7 @@
     "care": {
       "label": "Jewelry Care",
       "title": "Keep every piece luminous for longer.",
-      "subtitle": "Store separately, avoid water and perfume, polish gently, and give your jewelry moments of rest between wears."
+      "subtitle": "A little care preserves the beauty of every Maréa piece. Keep your jewelry away from moisture, perfume and harsh chemicals, and store each piece separately when not worn."
     },
     "newsletter": {
       "label": "Join the private Marea list.",
@@ -169,16 +170,16 @@
   },
   "faqs": {
     "0": {
-      "question": "Are Marea pieces gift-ready?",
-      "answer": "Yes. Every piece arrives in elegant packaging with a soft pouch and care card — ready to gift without extra wrapping."
+      "question": "Are Maréa pieces ready to gift?",
+      "answer": "Yes. Every Maréa piece arrives beautifully packaged, ready to gift or treasure for yourself."
     },
     "1": {
-      "question": "How do I protect the gold finish?",
-      "answer": "Avoid water, perfume, and harsh chemicals. Store pieces separately and polish gently with a soft cloth between wears."
+      "question": "How do I preserve the Maréa finish?",
+      "answer": "Keep your jewelry away from water, perfume, lotions, and harsh chemicals. Store it separately when not worn to preserve its shine."
     },
     "2": {
-      "question": "Do you offer pieces for special occasions?",
-      "answer": "Our gift sets and signature collections are curated for weddings, anniversaries, and milestone moments."
+      "question": "Which pieces are perfect for special moments?",
+      "answer": "Absolutely. Discover elegant pieces designed for everyday moments, celebrations, and unforgettable occasions."
     }
   },
   "footer": {
@@ -200,7 +201,7 @@
     "total": "Total",
     "inStock": "In stock",
     "lowStock": "Only {{count}} left",
-    "soldOut": "Sold out",
+    "soldOut": "Sold Out",
     "addToCart": "Add to Cart",
     "loginToAdd": "Sign in or create an account to add items to your cart.",
     "loginRequired": "Sign in to view your cart and checkout.",

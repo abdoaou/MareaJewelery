@@ -4,6 +4,7 @@ import { Star, ShoppingBag, Heart } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { Product } from '../data/products'
 import StockBadge from './StockBadge'
+import SoldOutOverlay from './SoldOutOverlay'
 import { useCartStore } from '../store/cartStore'
 import { useWishlistStore } from '../store/wishlistStore'
 import { useAuth } from '../context/AuthContext'
@@ -126,11 +127,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {badge}
           </span>
         )}
-        {product.stock <= 0 && (
-          <span className="absolute inset-x-0 bottom-0 z-10 bg-marea-bg/80 py-2 text-center text-xs font-semibold uppercase tracking-wider text-red-400 backdrop-blur-sm">
-            {t('cart.soldOut')}
-          </span>
-        )}
+        {product.stock <= 0 && <SoldOutOverlay />}
         <button
           type="button"
           onClick={handleLike}
@@ -146,7 +143,9 @@ export default function ProductCard({ product }: ProductCardProps) {
           <img
             src={product.image}
             alt={name}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className={`h-full w-full object-cover transition-transform duration-700 ${
+              product.stock <= 0 ? 'sold-out-image' : 'group-hover:scale-105'
+            }`}
             loading="lazy"
           />
         </Link>
@@ -180,7 +179,9 @@ export default function ProductCard({ product }: ProductCardProps) {
           type="button"
           onClick={handleAdd}
           disabled={product.stock <= 0 || adding}
-          className="btn-secondary mt-4 w-full text-sm disabled:opacity-40"
+          className={`mt-4 w-full text-sm ${
+            product.stock <= 0 ? 'btn-secondary btn-sold-out' : 'btn-secondary disabled:opacity-40'
+          }`}
         >
           <ShoppingBag size={14} className="inline me-2" />
           {product.stock <= 0

@@ -21,6 +21,7 @@ const router = Router()
 router.use(authenticate, adminOnly)
 
 router.get('/dashboard', adminController.dashboard)
+router.post('/analytics/reset', adminController.resetAnalytics)
 router.get('/charts', adminController.charts)
 router.get('/notifications', adminController.notifications)
 router.patch('/notifications/read-all', adminController.markAllNotificationsRead)

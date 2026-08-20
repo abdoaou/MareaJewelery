@@ -7,6 +7,7 @@ import { mapApiProduct, mapApiProductDetail, type ProductDetail } from '../utils
 import type { Product } from '../data/products'
 import { formatPrice } from '../utils/formatPrice'
 import StockBadge from '../components/StockBadge'
+import SoldOutOverlay from '../components/SoldOutOverlay'
 import ProductCard from '../components/ProductCard'
 import LoadingAnimation from '../components/LoadingAnimation'
 import { useCartStore } from '../store/cartStore'
@@ -187,16 +188,12 @@ export default function ProductDetailsPage() {
       <div className="grid gap-10 lg:grid-cols-2">
         <div>
           <div className="relative aspect-square overflow-hidden rounded-2xl border border-marea-border bg-marea-bg-soft">
-            {product.stock <= 0 && (
-              <span className="absolute inset-x-0 bottom-0 z-10 bg-marea-bg/80 py-2 text-center text-xs font-semibold uppercase tracking-wider text-red-400 backdrop-blur-sm">
-                {t('cart.soldOut')}
-              </span>
-            )}
+            {product.stock <= 0 && <SoldOutOverlay />}
             {images[activeImage] ? (
               <img
                 src={images[activeImage]}
                 alt={product.name}
-                className="h-full w-full object-cover"
+                className={`h-full w-full object-cover ${product.stock <= 0 ? 'sold-out-image' : ''}`}
               />
             ) : (
               <div className="flex h-full items-center justify-center text-marea-muted">
@@ -294,7 +291,9 @@ export default function ProductDetailsPage() {
               type="button"
               onClick={handleAdd}
               disabled={product.stock <= 0 || adding}
-              className="btn-primary flex-1 disabled:opacity-40"
+              className={`flex-1 ${
+                product.stock <= 0 ? 'btn-primary btn-sold-out' : 'btn-primary disabled:opacity-40'
+              }`}
             >
               <ShoppingBag size={16} className="inline me-2" />
               {product.stock <= 0

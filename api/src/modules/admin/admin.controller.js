@@ -61,4 +61,8 @@ export const adminController = {
   adminLogs: asyncHandler(async (req, res) =>
     success(res, { data: await adminService.getAdminLogs(Number(req.query.limit) || 50) }),
   ),
+  resetAnalytics: asyncHandler(async (_req, res) => {
+    const data = await adminService.resetAnalytics()
+    return success(res, { data, message: 'Analytics reset to zero' })
+  }),
 }

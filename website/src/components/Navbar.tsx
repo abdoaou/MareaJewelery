@@ -1,28 +1,39 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, ShoppingBag, Heart } from 'lucide-react'
+import { Menu, X, ShoppingBag, Heart, ChevronDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useCartStore } from '../store/cartStore'
 import { useWishlistStore } from '../store/wishlistStore'
 import { useAuth } from '../context/AuthContext'
 import ThemeLanguageToggle, { LanguageToggle, ThemeToggle } from './ThemeLanguageToggle'
+import { loadCategories } from '../utils/homeCatalog'
+
+type NavCategory = { id: string; slug: string; name: string }
 
 export default function Navbar() {
   const { t } = useTranslation()
   const { customer, logout } = useAuth()
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [categoriesOpen, setCategoriesOpen] = useState(false)
+  const [categories, setCategories] = useState<NavCategory[]>([])
   const apiItems = useCartStore((s) => s.apiItems)
   const cartCount = apiItems.reduce((sum, i) => sum + i.quantity, 0)
   const likedIds = useWishlistStore((s) => s.likedIds)
   const likeCount = customer ? likedIds.length : 0
 
-  const navLinks = [
+  const desktopNavLinks = [
     { label: t('nav.shop'), href: '/shop' },
     { label: t('nav.bestSellers'), href: '/shop?bestSeller=1' },
     { label: t('nav.story'), href: '/#promise' },
     { label: t('nav.care'), href: '/#care' },
+  ]
+
+  const mobileNavLinks = [
+    { label: t('nav.shop'), href: '/shop' },
+    { label: t('nav.bestSellers'), href: '/shop?bestSeller=1' },
+    { label: t('nav.story'), href: '/#promise' },
   ]
 
   useEffect(() => {
@@ -30,6 +41,43 @@ export default function Navbar() {
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  useEffect(() => {
+    if (!mobileOpen) {
+      setCategoriesOpen(false)
+      return
+    }
+    loadCategories()
+      .then((rows) =>
+        setCategories(
+          rows
+            .filter((c) => !c.isHidden)
+            .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+            .map((c) => ({ id: c.id, slug: c.slug, name: c.name })),
+        ),
+      )
+      .catch(() => setCategories([]))
+  }, [mobileOpen])
+
+  function closeMobile() {
+    setMobileOpen(false)
+    setCategoriesOpen(false)
+  }
+
+  function renderNavLink(link: { label: string; href: string }, onNavigate?: () => void) {
+    if (link.href.startsWith('/#')) {
+      return (
+        <a href={link.href} className="block text-sm" onClick={onNavigate}>
+          {link.label}
+        </a>
+      )
+    }
+    return (
+      <Link to={link.href} className="block text-sm" onClick={onNavigate}>
+        {link.label}
+      </Link>
+    )
+  }
 
   return (
     <motion.header
@@ -48,7 +96,7 @@ export default function Navbar() {
         </Link>
 
         <ul className="hidden items-center gap-8 md:flex">
-          {navLinks.map((link) => (
+          {desktopNavLinks.map((link) => (
             <li key={link.href}>
               {link.href.startsWith('/#') ? (
                 <a
@@ -140,34 +188,66 @@ export default function Navbar() {
             className="border-t border-marea-border bg-marea-bg/95 backdrop-blur-xl md:hidden"
           >
             <ul className="flex flex-col gap-4 px-6 py-6">
-              {navLinks.map((link) => (
-                <li key={link.href}>
-                  {link.href.startsWith('/#') ? (
-                    <a href={link.href} className="block text-sm" onClick={() => setMobileOpen(false)}>
-                      {link.label}
-                    </a>
-                  ) : (
-                    <Link to={link.href} className="block text-sm" onClick={() => setMobileOpen(false)}>
-                      {link.label}
-                    </Link>
-                  )}
-                </li>
+              {mobileNavLinks.map((link) => (
+                <li key={link.href}>{renderNavLink(link, closeMobile)}</li>
               ))}
+
               <li>
-                <Link to="/likes" className="block text-sm" onClick={() => setMobileOpen(false)}>
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between text-sm"
+                  onClick={() => setCategoriesOpen((open) => !open)}
+                  aria-expanded={categoriesOpen}
+                >
+                  <span>{t('nav.categories')}</span>
+                  <ChevronDown
+                    size={16}
+                    className={`transition-transform ${categoriesOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                <AnimatePresence>
+                  {categoriesOpen && (
+                    <motion.ul
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-3 space-y-2 overflow-hidden border-s-2 border-marea-gold/30 ps-4"
+                    >
+                      {categories.length === 0 ? (
+                        <li className="text-sm text-marea-muted">{t('common.loading')}</li>
+                      ) : (
+                        categories.map((cat) => (
+                          <li key={cat.id}>
+                            <Link
+                              to={`/category/${cat.slug}`}
+                              className="block py-1 text-sm text-marea-cream/90 hover:text-marea-gold"
+                              onClick={closeMobile}
+                            >
+                              {cat.name}
+                            </Link>
+                          </li>
+                        ))
+                      )}
+                    </motion.ul>
+                  )}
+                </AnimatePresence>
+              </li>
+
+              <li>
+                <Link to="/likes" className="block text-sm" onClick={closeMobile}>
                   {t('nav.likes')}
                   {likeCount > 0 ? ` (${likeCount})` : ''}
                 </Link>
               </li>
               <li>
-                <Link to="/cart" className="block text-sm" onClick={() => setMobileOpen(false)}>
+                <Link to="/cart" className="block text-sm" onClick={closeMobile}>
                   {t('nav.cart')}
                   {cartCount > 0 ? ` (${cartCount})` : ''}
                 </Link>
               </li>
               {customer && (
                 <li>
-                  <Link to="/order-tracker" className="block text-sm" onClick={() => setMobileOpen(false)}>
+                  <Link to="/order-tracker" className="block text-sm" onClick={closeMobile}>
                     {t('nav.orders')}
                   </Link>
                 </li>
@@ -179,7 +259,7 @@ export default function Navbar() {
                 </div>
               </li>
               <li>
-                <LanguageToggle showLabel onToggled={() => setMobileOpen(false)} />
+                <LanguageToggle showLabel onToggled={closeMobile} />
               </li>
               <li className="border-t border-marea-border pt-4">
                 {customer ? (
@@ -188,7 +268,7 @@ export default function Navbar() {
                     className="block text-sm text-marea-muted hover:text-marea-gold"
                     onClick={() => {
                       logout()
-                      setMobileOpen(false)
+                      closeMobile()
                     }}
                   >
                     {t('nav.logout')}
@@ -198,14 +278,14 @@ export default function Navbar() {
                     <Link
                       to="/login"
                       className="block text-sm text-marea-gold"
-                      onClick={() => setMobileOpen(false)}
+                      onClick={closeMobile}
                     >
                       {t('nav.login')}
                     </Link>
                     <Link
                       to="/register"
                       className="block text-sm text-marea-muted hover:text-marea-gold"
-                      onClick={() => setMobileOpen(false)}
+                      onClick={closeMobile}
                     >
                       {t('nav.register')}
                     </Link>

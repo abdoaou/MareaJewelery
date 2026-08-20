@@ -24,21 +24,40 @@ export function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [charts, setCharts] = useState<Record<string, unknown>>({})
   const [loading, setLoading] = useState(true)
+  const [resetting, setResetting] = useState(false)
+
+  function reload() {
+    return Promise.all([dashboardApi.stats(), dashboardApi.charts()]).then(([s, c]) => {
+      setStats(s.data)
+      setCharts(c.data)
+    })
+  }
 
   useEffect(() => {
-    Promise.all([dashboardApi.stats(), dashboardApi.charts()])
-      .then(([s, c]) => {
-        setStats(s.data)
-        setCharts(c.data)
-      })
-      .finally(() => setLoading(false))
+    reload().finally(() => setLoading(false))
 
     const interval = setInterval(() => {
-      dashboardApi.stats().then((s) => setStats(s.data))
-      dashboardApi.charts().then((c) => setCharts(c.data))
+      reload()
     }, 60000)
     return () => clearInterval(interval)
   }, [])
+
+  async function handleResetAnalytics() {
+    if (
+      !confirm(
+        'Reset all analytics to zero? This deletes all orders, reviews, notifications, likes, and view counts. Products and customers are kept.',
+      )
+    ) {
+      return
+    }
+    setResetting(true)
+    try {
+      await dashboardApi.resetAnalytics()
+      await reload()
+    } finally {
+      setResetting(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -59,6 +78,14 @@ export function DashboardPage() {
           <h1 className="page-title">Dashboard</h1>
           <p className="text-sm text-muted">Live store performance overview</p>
         </div>
+        <button
+          type="button"
+          className="btn-ghost text-sm text-red-400 hover:text-red-300"
+          disabled={resetting}
+          onClick={handleResetAnalytics}
+        >
+          {resetting ? 'Resetting…' : 'Reset analytics to 0'}
+        </button>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">

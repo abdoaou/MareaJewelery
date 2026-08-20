@@ -120,6 +120,7 @@ export const authApi = {
 export const dashboardApi = {
   stats: () => api<DashboardStats>('/admin/dashboard'),
   charts: () => api<Record<string, unknown>>('/admin/charts'),
+  resetAnalytics: () => api('/admin/analytics/reset', { method: 'POST' }),
   notifications: () => api<Notification[]>('/admin/notifications'),
   markRead: (id: string) => api(`/admin/notifications/${id}/read`, { method: 'PATCH' }),
   markAllRead: () => api('/admin/notifications/read-all', { method: 'PATCH' }),
