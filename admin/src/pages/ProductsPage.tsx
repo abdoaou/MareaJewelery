@@ -11,7 +11,7 @@ const MAX_IMAGES = 5
 const MIN_IMAGES = 1
 const PAGE_SIZE = 15
 
-type SortOption = 'newest' | 'oldest' | 'price-asc' | 'price-desc'
+type SortOption = 'newest' | 'oldest' | 'price-asc' | 'price-desc' | 'stock-asc'
 
 function sortParams(sort: SortOption): { sortBy: string; sortOrder: string } {
   switch (sort) {
@@ -21,6 +21,8 @@ function sortParams(sort: SortOption): { sortBy: string; sortOrder: string } {
       return { sortBy: 'price', sortOrder: 'asc' }
     case 'price-desc':
       return { sortBy: 'price', sortOrder: 'desc' }
+    case 'stock-asc':
+      return { sortBy: 'stock', sortOrder: 'asc' }
     default:
       return { sortBy: 'createdAt', sortOrder: 'desc' }
   }
@@ -402,6 +404,7 @@ export function ProductsPage() {
             <option value="oldest">Oldest first</option>
             <option value="price-asc">Price: low to high</option>
             <option value="price-desc">Price: high to low</option>
+            <option value="stock-asc">Stock: low to high</option>
           </select>
           <button type="button" className="btn-primary flex items-center gap-2" onClick={openCreate}>
             <Plus size={16} /> Add Product

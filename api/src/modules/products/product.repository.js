@@ -19,6 +19,36 @@ function listCacheKey(query) {
   })}`
 }
 
+const listSelect = {
+  id: true,
+  name: true,
+  slug: true,
+  shortDesc: true,
+  sku: true,
+  status: true,
+  price: true,
+  salePrice: true,
+  isFeatured: true,
+  isBestSeller: true,
+  isNewArrival: true,
+  isRecommended: true,
+  createdAt: true,
+  viewCount: true,
+  categoryId: true,
+  images: {
+    orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }],
+    take: 1,
+    select: { id: true, url: true, isPrimary: true },
+  },
+  category: { select: { id: true, name: true, slug: true } },
+  inventory: { select: { currentStock: true, reservedStock: true } },
+  _count: { select: { orderItems: true } },
+}
+
+function totalStock(product) {
+  return (product.inventory || []).reduce((sum, row) => sum + row.currentStock, 0)
+}
+
 export const productRepository = {
   findMany: async (query = {}) => {
     const {
@@ -37,7 +67,7 @@ export const productRepository = {
       sortOrder: sortOrderParam,
     } = query
 
-    const sortBy = sortByParam === 'price' ? 'price' : 'createdAt'
+    const sortBy = sortByParam === 'price' ? 'price' : sortByParam === 'stock' ? 'stock' : 'createdAt'
     const sortOrder = sortOrderParam === 'asc' ? 'asc' : 'desc'
 
     const cacheKey = listCacheKey(query)
@@ -64,43 +94,49 @@ export const productRepository = {
 
     const pageNum = Number(page) || 1
     const limitNum = Math.min(Number(limit) || 20, 100)
-
-    // Sequential queries use 1 pool connection better than Promise.all under Supabase limits
-    const items = await prisma.product.findMany({
-      where,
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        shortDesc: true,
-        sku: true,
-        status: true,
-        price: true,
-        salePrice: true,
-        isFeatured: true,
-        isBestSeller: true,
-        isNewArrival: true,
-        isRecommended: true,
-        createdAt: true,
-        viewCount: true,
-        categoryId: true,
-        images: {
-          orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }],
-          take: 1,
-          select: { id: true, url: true, isPrimary: true },
-        },
-        category: { select: { id: true, name: true, slug: true } },
-        inventory: { select: { currentStock: true, reservedStock: true } },
-        _count: { select: { orderItems: true } },
-      },
-      skip: (pageNum - 1) * limitNum,
-      take: limitNum,
-      orderBy:
-        recommended === 'true' || recommended === true
-          ? [{ isRecommended: 'desc' }, { isBestSeller: 'desc' }, { [sortBy]: sortOrder }]
-          : [{ [sortBy]: sortOrder }],
-    })
     const total = await prisma.product.count({ where })
+
+    let items
+
+    if (sortBy === 'stock') {
+      const matching = await prisma.product.findMany({
+        where,
+        select: {
+          id: true,
+          inventory: { select: { currentStock: true } },
+        },
+      })
+
+      const sortedIds = matching
+        .map((product) => ({ id: product.id, stock: totalStock(product) }))
+        .sort((a, b) => (sortOrder === 'asc' ? a.stock - b.stock : b.stock - a.stock))
+        .map((product) => product.id)
+
+      const pageIds = sortedIds.slice((pageNum - 1) * limitNum, pageNum * limitNum)
+
+      if (pageIds.length === 0) {
+        items = []
+      } else {
+        const pageItems = await prisma.product.findMany({
+          where: { id: { in: pageIds } },
+          select: listSelect,
+        })
+        const byId = new Map(pageItems.map((product) => [product.id, product]))
+        items = pageIds.map((id) => byId.get(id)).filter(Boolean)
+      }
+    } else {
+      // Sequential queries use 1 pool connection better than Promise.all under Supabase limits
+      items = await prisma.product.findMany({
+        where,
+        select: listSelect,
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
+        orderBy:
+          recommended === 'true' || recommended === true
+            ? [{ isRecommended: 'desc' }, { isBestSeller: 'desc' }, { [sortBy]: sortOrder }]
+            : [{ [sortBy]: sortOrder }],
+      })
+    }
 
     const result = {
       items,

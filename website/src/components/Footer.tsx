@@ -1,16 +1,34 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { loadCategories } from '../utils/homeCatalog'
 
-const shopLinkKeys = ['necklaces', 'rings', 'giftSets'] as const
 const differenceItemKeys = ['0', '1', '2', '3'] as const
+
+type FooterCategory = { id: string; slug: string; name: string }
 
 export default function Footer() {
   const { t } = useTranslation()
+  const [categories, setCategories] = useState<FooterCategory[]>([])
 
   const supportLinks = [
     { label: t('footer.jewelryCare'), href: '#care' },
     { label: t('footer.faq'), href: '#care' },
     { label: t('footer.instagram'), href: 'https://instagram.com/marea.jewelryyy' },
   ]
+
+  useEffect(() => {
+    loadCategories()
+      .then((rows) =>
+        setCategories(
+          rows
+            .filter((c) => !c.isHidden)
+            .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+            .map((c) => ({ id: c.id, slug: c.slug, name: c.name })),
+        ),
+      )
+      .catch(() => setCategories([]))
+  }, [])
 
   return (
     <footer className="border-t border-marea-border bg-marea-bg-soft py-16">
@@ -37,14 +55,22 @@ export default function Footer() {
           <div>
             <p className="section-label mb-4">{t('footer.shop')}</p>
             <ul className="space-y-3">
-              {shopLinkKeys.map((key) => (
-                <li key={key}>
-                  <a
-                    href="#collections"
+              <li>
+                <Link
+                  to="/shop"
+                  className="text-sm text-marea-muted transition-colors hover:text-marea-gold"
+                >
+                  {t('shop.allProducts')}
+                </Link>
+              </li>
+              {categories.map((cat) => (
+                <li key={cat.id}>
+                  <Link
+                    to={`/category/${cat.slug}`}
                     className="text-sm text-marea-muted transition-colors hover:text-marea-gold"
                   >
-                    {t(`categories.${key}`)}
-                  </a>
+                    {cat.name}
+                  </Link>
                 </li>
               ))}
             </ul>
