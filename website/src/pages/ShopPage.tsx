@@ -14,26 +14,29 @@ export default function ShopPage() {
   const bestSeller = params.get('bestSeller') === '1'
   const newArrival = params.get('newArrival') === '1'
   const newest = params.get('newest') === '1'
+  const searchQuery = params.get('search')?.trim() || ''
 
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
 
   const title = useMemo(() => {
+    if (searchQuery) return t('shop.searchResults', { query: searchQuery })
     if (bestSeller) return t('sections.bestSellers.title')
     if (newest || newArrival) return t('sections.newArrivals.title')
     return t('shop.allProducts')
-  }, [bestSeller, newest, newArrival, t])
+  }, [bestSeller, newest, newArrival, searchQuery, t])
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    cached(`shop:${bestSeller}:${newArrival}:${newest}`, 60_000, async () => {
+    cached(`shop:${bestSeller}:${newArrival}:${newest}:${searchQuery}`, 60_000, async () => {
       const res = await api.getProducts({
         status: 'PUBLISHED',
         limit: 100,
         ...(bestSeller ? { bestSeller: true } : {}),
         // newest=1 = createdAt desc (API default); newArrival keeps the flag filter
         ...(!newest && newArrival ? { newArrival: true } : {}),
+        ...(searchQuery ? { search: searchQuery } : {}),
       })
       return (res.data || []).map(mapApiProduct)
     })
@@ -49,7 +52,7 @@ export default function ShopPage() {
     return () => {
       cancelled = true
     }
-  }, [bestSeller, newArrival, newest])
+  }, [bestSeller, newArrival, newest, searchQuery])
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
@@ -59,7 +62,9 @@ export default function ShopPage() {
         <LoadingAnimation className="mt-16" />
       ) : products.length === 0 ? (
         <div className="mt-16 text-center">
-          <p className="text-marea-muted">{t('shop.empty')}</p>
+          <p className="text-marea-muted">
+            {searchQuery ? t('shop.searchEmpty', { query: searchQuery }) : t('shop.empty')}
+          </p>
           <Link to="/" className="btn-primary mt-8 inline-flex">
             {t('hero.shopCollection')}
           </Link>

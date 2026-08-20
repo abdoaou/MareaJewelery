@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 const shopLinkKeys = ['necklaces', 'rings', 'giftSets'] as const
+const differenceItemKeys = ['0', '1', '2', '3'] as const
 
 export default function Footer() {
   const { t } = useTranslation()
@@ -19,9 +20,18 @@ export default function Footer() {
             <p className="font-serif text-2xl font-semibold tracking-[0.3em] text-marea-cream">
               MAREA
             </p>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-marea-muted">
-              {t('footer.tagline')}
+            <p className="section-label mt-6 mb-3">{t('footer.differenceLabel')}</p>
+            <p className="max-w-md text-sm leading-relaxed text-marea-muted">
+              {t('footer.differenceBody')}
             </p>
+            <ul className="mt-5 space-y-2.5">
+              {differenceItemKeys.map((key) => (
+                <li key={key} className="flex items-start gap-3 text-sm text-marea-cream/90">
+                  <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-marea-gold" aria-hidden />
+                  <span>{t(`footer.differenceItems.${key}`)}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
           <div>

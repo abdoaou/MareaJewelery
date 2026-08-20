@@ -14,6 +14,13 @@
     "orders": "Track Orders",
     "likes": "Likes"
   },
+  "search": {
+    "open": "Search products",
+    "close": "Close search",
+    "label": "Search",
+    "placeholder": "Search jewelry…",
+    "hint": "Press Enter to search · Esc to close"
+  },
   "hero": {
     "label": "Handcrafted fine jewelry",
     "title": "Timeless Jewelry Designed to",
@@ -183,7 +190,14 @@
     }
   },
   "footer": {
-    "tagline": "Handcrafted jewelry for the moments you keep forever — luminous, intentional, and made to be passed on.",
+    "differenceLabel": "The Maréa Difference",
+    "differenceBody": "Timeless pieces, thoughtfully chosen, made to accompany every version of you.",
+    "differenceItems": {
+      "0": "Effortless elegance",
+      "1": "Thoughtfully selected designs",
+      "2": "Quality you can trust",
+      "3": "Made for everyday moments & milestones"
+    },
     "shop": "Shop",
     "support": "Support",
     "jewelryCare": "Jewelry Care",
@@ -294,6 +308,8 @@
   },
   "shop": {
     "allProducts": "All products",
+    "searchResults": "Results for \"{{query}}\"",
+    "searchEmpty": "No pieces found for \"{{query}}\".",
     "empty": "No products to show yet.",
     "emptyCategory": "No products in this category yet.",
     "loadFailed": "Could not load this category.",

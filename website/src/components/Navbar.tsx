@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, ShoppingBag, Heart, ChevronDown } from 'lucide-react'
+import { Menu, X, ShoppingBag, Heart, ChevronDown, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useCartStore } from '../store/cartStore'
 import { useWishlistStore } from '../store/wishlistStore'
 import { useAuth } from '../context/AuthContext'
 import ThemeLanguageToggle, { LanguageToggle, ThemeToggle } from './ThemeLanguageToggle'
 import { loadCategories } from '../utils/homeCatalog'
+import SearchOverlay from './SearchOverlay'
 
 type NavCategory = { id: string; slug: string; name: string }
 
@@ -17,6 +18,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [categoriesOpen, setCategoriesOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [categories, setCategories] = useState<NavCategory[]>([])
   const apiItems = useCartStore((s) => s.apiItems)
   const cartCount = apiItems.reduce((sum, i) => sum + i.quantity, 0)
@@ -119,6 +121,14 @@ export default function Navbar() {
 
         <div className="hidden items-center gap-3 md:flex">
           <ThemeLanguageToggle />
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-label={t('search.open')}
+            className="rounded-full p-2 text-marea-cream hover:text-marea-gold"
+          >
+            <Search size={20} />
+          </button>
           <Link to="/likes" className="relative rounded-full p-2 text-marea-cream hover:text-marea-gold">
             <Heart size={20} />
             {likeCount > 0 && (
@@ -152,6 +162,14 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-1 md:hidden">
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-label={t('search.open')}
+            className="rounded-full p-2 text-marea-cream hover:text-marea-gold"
+          >
+            <Search size={20} />
+          </button>
           <Link to="/likes" className="relative rounded-full p-2 text-marea-cream hover:text-marea-gold">
             <Heart size={20} />
             {likeCount > 0 && (
@@ -296,6 +314,8 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </motion.header>
   )
 }
