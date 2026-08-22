@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { loadCategories } from '../utils/homeCatalog'
+import { INSTAGRAM_URL } from '../constants/social'
 
 const differenceItemKeys = ['0', '1', '2', '3'] as const
 
@@ -14,7 +15,7 @@ export default function Footer() {
   const supportLinks = [
     { label: t('footer.jewelryCare'), href: '#care' },
     { label: t('footer.faq'), href: '#care' },
-    { label: t('footer.instagram'), href: 'https://instagram.com/marea.jewelryyy' },
+    { label: t('footer.instagram'), href: INSTAGRAM_URL },
   ]
 
   useEffect(() => {

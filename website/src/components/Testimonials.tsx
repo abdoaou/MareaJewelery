@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { Star } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { testimonialKeys } from '../data/products'
+import { INSTAGRAM_URL } from '../constants/social'
 
 export default function Testimonials() {
   const { t } = useTranslation()
@@ -20,7 +21,7 @@ export default function Testimonials() {
             {t('sections.testimonials.title')}
           </h2>
           <a
-            href="https://instagram.com/marea.jewelryyy"
+            href={INSTAGRAM_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-4 inline-flex items-center gap-2 text-sm text-marea-gold transition-colors hover:text-marea-gold-light"
