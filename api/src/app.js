@@ -48,6 +48,8 @@ app.use(
   helmet({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
+    // Allow WhatsApp / Facebook / iMessage crawlers to fetch og-image for link previews
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
   }),
 )
 app.use(cors({ origin: env.cors.origin, credentials: true }))
@@ -108,7 +110,16 @@ if (hasAdmin) {
 if (hasWebsite) {
   app.use((req, res, next) => {
     if (isAdminHost(req)) return next()
-    express.static(websiteDist, { index: false, maxAge: '1d' })(req, res, next)
+    express.static(websiteDist, {
+      index: false,
+      maxAge: '1d',
+      setHeaders(res, filePath) {
+        if (filePath.endsWith('og-image.png')) {
+          res.setHeader('Content-Type', 'image/png')
+          res.setHeader('Cache-Control', 'public, max-age=604800, immutable')
+        }
+      },
+    })(req, res, next)
   })
   app.get('*', (req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next()
