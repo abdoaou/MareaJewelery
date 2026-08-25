@@ -6,7 +6,7 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "node --watch src/server.js",
-    "start": "prisma generate && node src/server.js",
+    "start": "prisma generate && prisma db push --skip-generate && node src/server.js",
     "worker": "prisma generate && node src/jobs/worker.js",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",

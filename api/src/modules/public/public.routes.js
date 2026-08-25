@@ -1,9 +1,27 @@
 import prisma from '../../config/prisma.js'
 import { success } from '../../shared/utils/response.js'
 import { asyncHandler } from '../../shared/utils/asyncHandler.js'
+import { analyticsService } from '../analytics/analytics.service.js'
 import { Router } from 'express'
 
 const router = Router()
+
+router.post(
+  '/visit',
+  asyncHandler(async (req, res) => {
+    const sessionId = req.headers['x-session-id']
+    const path = req.body?.path || req.headers.referer || '/'
+    const userAgent = req.headers['user-agent'] || ''
+
+    const result = await analyticsService.recordVisit({
+      sessionId: typeof sessionId === 'string' ? sessionId : '',
+      path,
+      userAgent,
+    })
+
+    return success(res, { data: result })
+  }),
+)
 
 router.get(
   '/recent-orders',

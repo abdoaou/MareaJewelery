@@ -9,6 +9,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import HomePage from './pages/HomePage'
 import ScrollToTop from './components/ScrollToTop'
+import VisitTracker from './components/VisitTracker'
 import LoadingAnimation from './components/LoadingAnimation'
 
 const ShopPage = lazy(() => import('./pages/ShopPage'))
@@ -32,6 +33,7 @@ function App() {
           <ProductCatalogProvider>
             <BrowserRouter>
               <ScrollToTop />
+              <VisitTracker />
               <div className="min-h-screen bg-marea-bg text-marea-cream">
                 <Navbar />
                 <main>

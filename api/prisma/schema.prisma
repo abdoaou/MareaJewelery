@@ -633,6 +633,17 @@ model RecentlyViewed {
   @@map("recently_viewed")
 }
 
+model SiteVisit {
+  id        String   @id @default(uuid())
+  sessionId String   @map("session_id")
+  path      String   @default("/")
+  visitedAt DateTime @default(now()) @map("visited_at")
+
+  @@index([sessionId])
+  @@index([visitedAt])
+  @@map("site_visits")
+}
+
 // ─── NOTIFICATIONS & EMAIL ─────────────────────────────────────────────────
 
 model Notification {

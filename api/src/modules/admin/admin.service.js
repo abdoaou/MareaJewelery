@@ -5,6 +5,7 @@ import { sendEmail, sendBulkEmails, assertEmailConfigured as checkEmailConfigure
 import { personalize, plainTextToHtml, wrapBroadcastEmail } from '../../shared/services/email.templates.js'
 import { logger } from '../../shared/utils/logger.js'
 import { cacheGet, cacheSet, cacheDel } from '../../config/redis.js'
+import { analyticsService } from '../analytics/analytics.service.js'
 
 const PLACEHOLDER_EMAIL_RE = /@(example\.com|example\.org|test\.com|localhost)$/i
 
@@ -47,7 +48,7 @@ export const adminService = {
     if (cached) return cached
 
     // Few round-trips: remote Supabase latency dominates when we fan out many queries
-    const [orderRollup, catalogRollup] = await Promise.all([
+    const [orderRollup, catalogRollup, visitors] = await Promise.all([
       prisma.$queryRaw`
         SELECT
           COALESCE(SUM(total), 0)::float AS total_revenue,
@@ -91,6 +92,7 @@ export const adminService = {
           (SELECT COALESCE(SUM(like_count), 0)::int FROM products WHERE deleted_at IS NULL) AS total_likes,
           (SELECT COALESCE(SUM(view_count), 0)::int FROM products WHERE deleted_at IS NULL) AS total_views
       `,
+      analyticsService.visitorCounts(),
     ])
 
     const o = orderRollup[0] || {}
@@ -141,11 +143,7 @@ export const adminService = {
         totalViews,
         averageOrderValue: Math.round(avgOrderValue * 100) / 100,
       },
-      visitors: {
-        today: 0,
-        thisWeek: 0,
-        thisMonth: 0,
-      },
+      visitors,
       inventory: { value: 0 },
     }
 
@@ -506,6 +504,7 @@ export const adminService = {
       prisma.order.deleteMany({}),
       prisma.notification.deleteMany({}),
       prisma.recentlyViewed.deleteMany({}),
+      prisma.siteVisit.deleteMany({}),
       prisma.stockMovement.deleteMany({}),
       prisma.wishlist.deleteMany({}),
       prisma.product.updateMany({
