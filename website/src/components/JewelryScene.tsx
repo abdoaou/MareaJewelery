@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, Suspense } from 'react'
+import { useEffect, useMemo, useRef, Suspense, type ComponentRef } from 'react'
 import { Canvas, useLoader } from '@react-three/fiber'
 import { Environment, Sparkles, Html, OrbitControls } from '@react-three/drei'
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js'
@@ -54,7 +54,7 @@ function BraceletModel() {
 }
 
 function Scene() {
-  const controlsRef = useRef<{ autoRotate: boolean } | null>(null)
+  const controlsRef = useRef<ComponentRef<typeof OrbitControls> | null>(null)
 
   useEffect(() => {
     const onVisibility = () => {
