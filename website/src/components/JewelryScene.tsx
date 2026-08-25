@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, Suspense, type ComponentRef } from 'react'
 import { Canvas, useLoader } from '@react-three/fiber'
 import { Environment, Sparkles, Html, OrbitControls } from '@react-three/drei'
+import LoadingAnimation from './LoadingAnimation'
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js'
 import * as THREE from 'three'
 
@@ -9,7 +10,7 @@ const BRACELET_MODEL = '/braclet/base.obj'
 function LoadingIndicator() {
   return (
     <Html center>
-      <div className="loading-spinner h-10 w-10" aria-hidden />
+      <LoadingAnimation size="md" label={false} />
     </Html>
   )
 }

@@ -1,40 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import HeroScene from './HeroScene'
 
-function useDeferred3d() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [enabled, setEnabled] = useState(false)
-
-  useEffect(() => {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const mobile = window.matchMedia('(max-width: 768px)').matches
-    if (reduced || mobile) return
-
-    const node = containerRef.current
-    if (!node) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setEnabled(true)
-          observer.disconnect()
-        }
-      },
-      { rootMargin: '120px' },
-    )
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [])
-
-  return { containerRef, enabled }
-}
-
 export default function Hero() {
   const { t } = useTranslation()
-  const { containerRef, enabled } = useDeferred3d()
 
   const stats = [
     { value: t('hero.stat1Value'), label: t('hero.stat1Label') },
@@ -85,18 +55,13 @@ export default function Hero() {
           </div>
         </div>
 
-        <div
-          ref={containerRef}
-          className="relative order-1 h-[420px] lg:order-2 lg:h-[600px]"
-        >
-          <HeroScene enabled={enabled} />
+        <div className="relative order-1 h-[420px] lg:order-2 lg:h-[600px]">
+          <HeroScene />
 
-          {enabled && (
-            <div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-marea-border bg-marea-bg/60 px-5 py-2.5 text-xs tracking-widest text-marea-gold-light backdrop-blur-md uppercase">
-              <Star size={12} className="me-2 inline text-marea-gold" />
-              {t('hero.dragToRotate')}
-            </div>
-          )}
+          <div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-marea-border bg-marea-bg/60 px-5 py-2.5 text-xs tracking-widest text-marea-gold-light backdrop-blur-md uppercase">
+            <Star size={12} className="me-2 inline text-marea-gold" />
+            {t('hero.dragToRotate')}
+          </div>
         </div>
       </div>
     </section>
