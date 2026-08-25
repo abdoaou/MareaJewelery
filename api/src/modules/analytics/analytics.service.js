@@ -18,10 +18,15 @@ export const analyticsService = {
     if (userAgent && BOT_RE.test(userAgent)) return { recorded: false }
 
     const today = dayStart()
-    const existing = await prisma.siteVisit.findFirst({
-      where: { sessionId, visitedAt: { gte: today } },
-      select: { id: true },
-    })
+    let existing = null
+    try {
+      existing = await prisma.siteVisit.findFirst({
+        where: { sessionId, visitedAt: { gte: today } },
+        select: { id: true },
+      })
+    } catch {
+      return { recorded: false }
+    }
     if (existing) return { recorded: false }
 
     try {
