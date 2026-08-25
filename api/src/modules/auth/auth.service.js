@@ -19,7 +19,7 @@ async function sendVerificationEmail(user, code, options = {}) {
       html: wrapVerificationEmail({ firstName: name, code }),
       text: `Hello ${name},\n\nYour Marea verification code is: ${code}\n\nThis code expires in 15 minutes.`,
     },
-    options,
+    { retries: 1, waitForDelivery: false, ...options },
   )
 }
 
@@ -32,7 +32,7 @@ async function sendPasswordResetEmail(user, code) {
       html: wrapPasswordResetEmail({ firstName: name, code }),
       text: `Hello ${name},\n\nYour Marea password reset code is: ${code}\n\nThis code expires in 1 hour.`,
     },
-    { retries: 2 },
+    { retries: 1, waitForDelivery: false },
   )
 }
 
@@ -71,8 +71,8 @@ export const authService = {
     const verification = await authRepository.createEmailVerification(user.id)
     let emailSent = true
     try {
-      // Keep register fast: 2 quick attempts; the verify page auto-resends on failure
-      await sendVerificationEmail(user, verification.token, { retries: 2 })
+      // Respond quickly once Brevo accepts; verify page can resend if needed
+      await sendVerificationEmail(user, verification.token, { retries: 1 })
     } catch (err) {
       emailSent = false
       logger.error('Verification email failed on register', {
@@ -109,7 +109,7 @@ export const authService = {
     const profile = await authRepository.findById(user.id)
 
     if (meta.sessionId) {
-      await cartService.mergeGuestCart(meta.sessionId, user.id).catch((err) => {
+      void cartService.mergeGuestCart(meta.sessionId, user.id).catch((err) => {
         logger.warn('Guest cart merge failed', { error: err.message })
       })
     }
@@ -152,31 +152,32 @@ export const authService = {
       throw new UnauthorizedError('Please verify your email before signing in')
     }
 
-    await authRepository.updateUser(user.id, {
-      lastLoginAt: new Date(),
-      lastLoginIp: meta.ip,
-    })
-
     const tokens = tokenPair(user)
-    await authRepository.createSession({
-      userId: user.id,
-      refreshToken: tokens.refreshToken,
-      ipAddress: meta.ip,
-      userAgent: meta.userAgent,
-      expiresAt: new Date(Date.now() + parseExpiry(env.jwt.refreshExpiresIn)),
-    })
+    await Promise.all([
+      authRepository.updateUser(user.id, {
+        lastLoginAt: new Date(),
+        lastLoginIp: meta.ip,
+      }),
+      authRepository.createSession({
+        userId: user.id,
+        refreshToken: tokens.refreshToken,
+        ipAddress: meta.ip,
+        userAgent: meta.userAgent,
+        expiresAt: new Date(Date.now() + parseExpiry(env.jwt.refreshExpiresIn)),
+      }),
+    ])
 
     if (['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'WAREHOUSE_MANAGER'].includes(user.role)) {
-      await authRepository.logAdminAction({
+      void authRepository.logAdminAction({
         userId: user.id,
         action: 'LOGIN',
         ipAddress: meta.ip,
         userAgent: meta.userAgent,
-      })
+      }).catch(() => {})
     }
 
     if (meta.sessionId) {
-      await cartService.mergeGuestCart(meta.sessionId, user.id).catch((err) => {
+      void cartService.mergeGuestCart(meta.sessionId, user.id).catch((err) => {
         logger.warn('Guest cart merge failed', { error: err.message })
       })
     }

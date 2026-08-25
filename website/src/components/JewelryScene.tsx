@@ -1,16 +1,15 @@
-import { useMemo, Suspense } from 'react'
+import { useEffect, useMemo, useRef, Suspense } from 'react'
 import { Canvas, useLoader } from '@react-three/fiber'
 import { Environment, Sparkles, Html, OrbitControls } from '@react-three/drei'
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js'
 import * as THREE from 'three'
-import LoadingAnimation from './LoadingAnimation'
 
 const BRACELET_MODEL = '/braclet/base.obj'
 
 function LoadingIndicator() {
   return (
     <Html center>
-      <LoadingAnimation size="sm" label={false} />
+      <div className="loading-spinner h-10 w-10" aria-hidden />
     </Html>
   )
 }
@@ -55,6 +54,16 @@ function BraceletModel() {
 }
 
 function Scene() {
+  const controlsRef = useRef<{ autoRotate: boolean } | null>(null)
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (controlsRef.current) controlsRef.current.autoRotate = !document.hidden
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [])
+
   return (
     <>
       <ambientLight intensity={0.35} />
@@ -72,21 +81,15 @@ function Scene() {
 
       <BraceletModel />
 
-      <Sparkles
-        count={100}
-        scale={5}
-        size={2}
-        speed={0.35}
-        opacity={0.55}
-        color="#e8d5a3"
-      />
+      <Sparkles count={36} scale={5} size={1.6} speed={0.25} opacity={0.45} color="#e8d5a3" />
 
       <OrbitControls
+        ref={controlsRef}
         makeDefault
         enablePan={false}
         enableZoom={false}
         autoRotate
-        autoRotateSpeed={0.6}
+        autoRotateSpeed={0.45}
         dampingFactor={0.08}
         enableDamping
       />
@@ -101,8 +104,8 @@ export default function JewelryScene() {
     <div className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing">
       <Canvas
         camera={{ position: [0, 0.2, 4], fov: 42 }}
-        dpr={[1, 2]}
-        gl={{ antialias: true, alpha: true }}
+        dpr={[1, 1.5]}
+        gl={{ antialias: false, alpha: true, powerPreference: 'low-power' }}
         style={{ background: 'transparent', touchAction: 'none' }}
       >
         <Suspense fallback={<LoadingIndicator />}>

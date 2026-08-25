@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   // Strip spaces, invisible RTL marks, and full-width @ that mobile keyboards insert
   const cleanEmail = (value: string) =>
@@ -28,8 +29,10 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
+    setLoading(true)
     try {
-      await login(email, password)
+      await login(cleanEmail(email), password)
       const afterLike = await processPendingLike(toggleLike)
       if (afterLike) {
         navigate(afterLike)
@@ -41,8 +44,10 @@ export default function LoginPage() {
       const message = err instanceof Error ? err.message : t('auth.loginFailed')
       setError(message)
       if (message.toLowerCase().includes('verify') && email) {
-        navigate('/verify-email', { state: { email, from, reason } })
+        navigate('/verify-email', { state: { email: cleanEmail(email), from, reason } })
       }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -99,8 +104,8 @@ export default function LoginPage() {
             {t('auth.forgotPassword')}
           </Link>
         </div>
-        <button type="submit" className="btn-primary mt-6 w-full">
-          {t('auth.loginBtn')}
+        <button type="submit" disabled={loading} className="btn-primary mt-6 w-full disabled:opacity-50">
+          {loading ? t('common.loading') : t('auth.loginBtn')}
         </button>
         <p className="mt-4 text-center text-sm text-marea-muted">
           {t('auth.noAccount')}{' '}

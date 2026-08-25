@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Star, ShoppingBag, Heart } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -17,12 +17,12 @@ interface ProductCardProps {
   product: Product
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+function ProductCard({ product }: ProductCardProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
-  const { addToApi } = useCartStore()
-  const { toggle, likedIds } = useWishlistStore()
+  const addToApi = useCartStore((s) => s.addToApi)
+  const toggle = useWishlistStore((s) => s.toggle)
   const { customer } = useAuth()
   const { resolveApiId } = useProductCatalog()
   const [adding, setAdding] = useState(false)
@@ -30,13 +30,15 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [resolvedId, setResolvedId] = useState(product.apiProductId || '')
   const [heartPop, setHeartPop] = useState(false)
 
+  const productId = product.apiProductId || resolvedId
+  const liked = useWishlistStore((s) => (productId ? s.likedIds.includes(productId) : false))
+
   const name = product.name || t(`products.${product.id}.name`, product.id)
   const description =
     product.description !== undefined
       ? product.description
       : t(`products.${product.id}.description`, '')
   const badge = product.badgeKey ? t(product.badgeKey) : undefined
-  const liked = resolvedId ? likedIds.includes(resolvedId) : false
   const detailPath = `/product/${product.apiSlug || product.id}`
 
   const resolveId = async () => {
@@ -72,18 +74,18 @@ export default function ProductCard({ product }: ProductCardProps) {
     }
 
     void (async () => {
-      const productId = await resolveId()
-      if (!productId) {
+      const id = await resolveId()
+      if (!id) {
         setError(t('likes.failed'))
         return
       }
       if (!customer) {
-        setPendingLike({ productId, returnTo: location.pathname })
+        setPendingLike({ productId: id, returnTo: location.pathname })
         navigate('/login', { state: { from: location.pathname, reason: 'like' } })
         return
       }
       try {
-        await toggle(productId)
+        await toggle(id)
       } catch (err) {
         setError(err instanceof Error ? err.message : t('likes.failed'))
       }
@@ -99,19 +101,19 @@ export default function ProductCard({ product }: ProductCardProps) {
     setError('')
 
     try {
-      const productId = await resolveId()
-      if (!productId) {
+      const id = await resolveId()
+      if (!id) {
         setError(t('cart.addFailed'))
         return
       }
 
       if (!customer) {
-        setPendingAdd({ productId, returnTo: location.pathname })
+        setPendingAdd({ productId: id, returnTo: location.pathname })
         navigate('/login', { state: { from: location.pathname, reason: 'addToCart' } })
         return
       }
 
-      await addToApi(productId)
+      await addToApi(id)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('cart.addFailed'))
     } finally {
@@ -147,6 +149,8 @@ export default function ProductCard({ product }: ProductCardProps) {
               product.stock <= 0 ? 'sold-out-image' : 'group-hover:scale-105'
             }`}
             loading="lazy"
+            decoding="async"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         </Link>
       </div>
@@ -194,3 +198,5 @@ export default function ProductCard({ product }: ProductCardProps) {
     </article>
   )
 }
+
+export default memo(ProductCard)

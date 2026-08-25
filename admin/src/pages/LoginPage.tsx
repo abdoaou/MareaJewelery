@@ -19,9 +19,8 @@ export function LoginPage() {
     setLoading(true)
     try {
       await login(email, password)
-      await unlockNotificationAudio()
-      await enableAlerts()
       navigate('/')
+      void unlockNotificationAudio().then(() => enableAlerts())
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
     } finally {

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
 import { api } from '../services/api'
 
 type ApiProduct = { id: string; slug: string }
@@ -12,11 +12,13 @@ const ProductCatalogContext = createContext<ProductCatalogContextValue | null>(n
 
 export function ProductCatalogProvider({ children }: { children: ReactNode }) {
   const [idsBySlug, setIdsBySlug] = useState<Record<string, string>>({})
+  const idsRef = useRef(idsBySlug)
+  idsRef.current = idsBySlug
 
-  const getApiId = (slug: string) => idsBySlug[slug]
+  const getApiId = useCallback((slug: string) => idsRef.current[slug], [])
 
-  const resolveApiId = async (slug: string) => {
-    const cached = idsBySlug[slug]
+  const resolveApiId = useCallback(async (slug: string) => {
+    const cached = idsRef.current[slug]
     if (cached) return cached
     try {
       const res = await api.getProductBySlug(slug)
@@ -26,12 +28,15 @@ export function ProductCatalogProvider({ children }: { children: ReactNode }) {
     } catch {
       return undefined
     }
-  }
+  }, [])
+
+  const value = useMemo(
+    () => ({ getApiId, resolveApiId }),
+    [getApiId, resolveApiId],
+  )
 
   return (
-    <ProductCatalogContext.Provider value={{ getApiId, resolveApiId }}>
-      {children}
-    </ProductCatalogContext.Provider>
+    <ProductCatalogContext.Provider value={value}>{children}</ProductCatalogContext.Provider>
   )
 }
 

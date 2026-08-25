@@ -294,3 +294,31 @@ body {
   transform: none !important;
   box-shadow: none !important;
 }
+
+.loading-spinner {
+  border-radius: 50%;
+  border: 2px solid rgba(201, 169, 98, 0.2);
+  border-top-color: var(--color-marea-gold);
+  animation: loading-spin 0.75s linear infinite;
+}
+
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation: none;
+    border-top-color: var(--color-marea-gold);
+  }
+
+  .card-luxury:hover {
+    transform: none;
+  }
+
+  .like-heart-pop {
+    animation: none;
+  }
+}

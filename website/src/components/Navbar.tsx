@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, ShoppingBag, Heart, ChevronDown, Search } from 'lucide-react'
@@ -8,7 +8,8 @@ import { useWishlistStore } from '../store/wishlistStore'
 import { useAuth } from '../context/AuthContext'
 import ThemeLanguageToggle, { LanguageToggle, ThemeToggle } from './ThemeLanguageToggle'
 import { loadCategories } from '../utils/homeCatalog'
-import SearchOverlay from './SearchOverlay'
+
+const SearchOverlay = lazy(() => import('./SearchOverlay'))
 
 type NavCategory = { id: string; slug: string; name: string }
 
@@ -39,8 +40,15 @@ export default function Navbar() {
   ]
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', onScroll)
+    let isScrolled = window.scrollY > 40
+    const onScroll = () => {
+      const next = window.scrollY > 40
+      if (next !== isScrolled) {
+        isScrolled = next
+        setScrolled(next)
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
@@ -315,7 +323,11 @@ export default function Navbar() {
         )}
       </AnimatePresence>
 
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+      {searchOpen && (
+        <Suspense fallback={null}>
+          <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+        </Suspense>
+      )}
     </motion.header>
   )
 }

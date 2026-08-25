@@ -71,8 +71,21 @@ function OrderDetail({ orderId }: { orderId: string }) {
 
   useEffect(() => {
     load()
-    const interval = setInterval(load, 30000)
-    return () => clearInterval(interval)
+    let interval = window.setInterval(load, 30000)
+
+    const onVisibility = () => {
+      window.clearInterval(interval)
+      if (!document.hidden) {
+        load()
+        interval = window.setInterval(load, 30000)
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
+    return () => {
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
   }, [load])
 
   if (loading) {

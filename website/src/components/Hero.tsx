@@ -1,11 +1,40 @@
-import { motion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import HeroScene from './HeroScene'
 
+function useDeferred3d() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [enabled, setEnabled] = useState(false)
+
+  useEffect(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const mobile = window.matchMedia('(max-width: 768px)').matches
+    if (reduced || mobile) return
+
+    const node = containerRef.current
+    if (!node) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setEnabled(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '120px' },
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  return { containerRef, enabled }
+}
+
 export default function Hero() {
   const { t } = useTranslation()
+  const { containerRef, enabled } = useDeferred3d()
 
   const stats = [
     { value: t('hero.stat1Value'), label: t('hero.stat1Label') },
@@ -24,12 +53,7 @@ export default function Hero() {
       />
 
       <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-8 px-6 lg:grid-cols-2 lg:gap-12 lg:px-8">
-        <motion.div
-          initial={{ opacity: 1, x: 0 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="order-2 lg:order-1"
-        >
+        <div className="order-2 lg:order-1">
           <p className="section-label mb-6">{t('hero.label')}</p>
 
           <h1 className="font-serif text-5xl leading-[1.1] font-light text-marea-cream md:text-6xl lg:text-7xl">
@@ -46,9 +70,9 @@ export default function Hero() {
               {t('hero.shopCollection')}
               <ArrowRight size={16} />
             </Link>
-            <a href="#new-arrivals" className="btn-secondary">
+            <Link to="/shop" className="btn-secondary">
               {t('hero.newArrivals')}
-            </a>
+            </Link>
           </div>
 
           <div className="mt-14 flex flex-wrap gap-10 border-t border-marea-border pt-8">
@@ -59,26 +83,21 @@ export default function Hero() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 1, scale: 1 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8 }}
+        <div
+          ref={containerRef}
           className="relative order-1 h-[420px] lg:order-2 lg:h-[600px]"
         >
-          <HeroScene />
+          <HeroScene enabled={enabled} />
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 0.8 }}
-            className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-marea-border bg-marea-bg/60 px-5 py-2.5 text-xs tracking-widest text-marea-gold-light backdrop-blur-md uppercase"
-          >
-            <Star size={12} className="me-2 inline text-marea-gold" />
-            {t('hero.dragToRotate')}
-          </motion.div>
-        </motion.div>
+          {enabled && (
+            <div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-marea-border bg-marea-bg/60 px-5 py-2.5 text-xs tracking-widest text-marea-gold-light backdrop-blur-md uppercase">
+              <Star size={12} className="me-2 inline text-marea-gold" />
+              {t('hero.dragToRotate')}
+            </div>
+          )}
+        </div>
       </div>
     </section>
   )

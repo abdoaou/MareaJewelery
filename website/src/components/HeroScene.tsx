@@ -5,17 +5,26 @@ const JewelryScene = lazy(() => import('./JewelryScene'))
 
 function SceneFallback() {
   return (
-    <div className="flex h-full w-full items-center justify-center">
+    <div className="flex h-full w-full items-center justify-center p-6">
       <img
-        src="https://images.unsplash.com/photo-1611591436351-5b4c4e6e7c3a?w=600"
-        alt="Marea jewelry"
-        className="max-h-full max-w-full rounded-2xl object-cover opacity-90"
+        src="/og-image.png"
+        alt="Maréa Jewels"
+        className="max-h-full max-w-full rounded-2xl object-contain opacity-90"
+        width={512}
+        height={512}
+        decoding="async"
       />
     </div>
   )
 }
 
-export default function HeroScene() {
+interface HeroSceneProps {
+  enabled: boolean
+}
+
+export default function HeroScene({ enabled }: HeroSceneProps) {
+  if (!enabled) return <SceneFallback />
+
   return (
     <ErrorBoundary fallback={<SceneFallback />}>
       <Suspense fallback={<SceneFallback />}>

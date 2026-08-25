@@ -135,7 +135,7 @@ function getTransporter() {
   return transporter
 }
 
-async function sendViaBrevoApi({ to, subject, html, text }) {
+async function sendViaBrevoApi({ to, subject, html, text }, { waitForDelivery = false } = {}) {
   const apiKey = getValidBrevoApiKey()
   if (!apiKey) throw new Error('Brevo API key is missing or invalid')
 
@@ -162,6 +162,7 @@ async function sendViaBrevoApi({ to, subject, html, text }) {
       Accept: 'application/json',
     },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(10_000),
   })
   if (!res.ok) {
     const body = await res.text().catch(() => '')
@@ -170,8 +171,11 @@ async function sendViaBrevoApi({ to, subject, html, text }) {
   const json = await res.json().catch(() => ({}))
   logger.info('[Email accepted by Brevo]', { to, subject, messageId: json.messageId })
 
-  await waitForBrevoDelivery({ to, subject, apiKey, sentAtMs })
-  logger.info('[Email delivered via Brevo API]', { to, subject, messageId: json.messageId })
+  if (waitForDelivery) {
+    await waitForBrevoDelivery({ to, subject, apiKey, sentAtMs })
+    logger.info('[Email delivered via Brevo API]', { to, subject, messageId: json.messageId })
+  }
+
   return json
 }
 
@@ -242,9 +246,9 @@ async function sendBulkViaBrevoApi(messages, apiKey) {
   return { sent, failures }
 }
 
-async function sendOnce({ to, subject, html, text }) {
+async function sendOnce({ to, subject, html, text }, options = {}) {
   if (getValidBrevoApiKey()) {
-    return sendViaBrevoApi({ to, subject, html, text })
+    return sendViaBrevoApi({ to, subject, html, text }, options)
   }
 
   const transport = getTransporter()
@@ -267,11 +271,11 @@ async function sendOnce({ to, subject, html, text }) {
   return info
 }
 
-export async function sendEmail({ to, subject, html, text }, { retries = 3 } = {}) {
+export async function sendEmail({ to, subject, html, text }, { retries = 3, waitForDelivery = false } = {}) {
   let lastError
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      return await sendOnce({ to, subject, html, text })
+      return await sendOnce({ to, subject, html, text }, { waitForDelivery })
     } catch (err) {
       lastError = err
       logger.error('[Email failed]', { to, subject, attempt, retries, error: err.message })

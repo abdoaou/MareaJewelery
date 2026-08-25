@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   api,
   setToken,
@@ -38,14 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const syncWishlist = useWishlistStore((s) => s.sync)
   const clearWishlist = useWishlistStore((s) => s.clear)
 
-  const completeAuth = (data: AuthResponse) => {
+  const completeAuth = useCallback((data: AuthResponse) => {
     setToken(data.token, data.refreshToken ?? null)
     setCustomer(data.customer)
     saveCustomer(data.customer)
     setLoggedIn(true)
-  }
+  }, [setLoggedIn])
 
-  const logout = () => {
+  const logout = useCallback(() => {
     const refreshToken = localStorage.getItem('marea_refresh_token')
     if (refreshToken) void api.logout(refreshToken).catch(() => {})
     clearSession()
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useCartStore.setState({ apiItems: [] })
     clearWishlist()
     void syncFromApi()
-  }
+  }, [clearWishlist, setLoggedIn, syncFromApi])
 
   useEffect(() => {
     setOnSessionExpired(() => {
@@ -77,7 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setLoggedIn(true)
           }
 
-          // Renew access token when a refresh token exists
           if (localStorage.getItem('marea_refresh_token')) {
             await tryRefreshSession()
           }
@@ -106,13 +105,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [setLoggedIn, syncFromApi, syncWishlist])
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     const res = await api.login({ email, password })
     completeAuth(res.data)
-    await Promise.all([syncFromApi(), syncWishlist()])
-  }
+    void Promise.all([syncFromApi(), syncWishlist()])
+  }, [completeAuth, syncFromApi, syncWishlist])
 
-  const register = async (data: { email: string; password: string; fullName?: string; phone?: string }) => {
+  const register = useCallback(async (data: { email: string; password: string; fullName?: string; phone?: string }) => {
     const res = await api.register(data)
     if ('requiresVerification' in res.data && res.data.requiresVerification) {
       return {
@@ -122,15 +121,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     completeAuth(res.data as AuthResponse)
-    await Promise.all([syncFromApi(), syncWishlist()])
+    void Promise.all([syncFromApi(), syncWishlist()])
     return { requiresVerification: false }
-  }
+  }, [completeAuth, syncFromApi, syncWishlist])
 
-  return (
-    <AuthContext.Provider value={{ customer, ready, login, register, completeAuth, logout }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ customer, ready, login, register, completeAuth, logout }),
+    [customer, ready, login, register, completeAuth, logout],
   )
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

@@ -1,4 +1,6 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { LazyMotion, domAnimation } from 'framer-motion'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider } from './context/AuthContext'
 import { ProductCatalogProvider } from './context/ProductCatalogContext'
@@ -6,55 +8,61 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import HomePage from './pages/HomePage'
-import CartPage from './pages/CartPage'
-import CheckoutPage from './pages/CheckoutPage'
-import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
-import VerifyEmailPage from './pages/VerifyEmailPage'
-import OrderTrackerPage from './pages/OrderTrackerPage'
-import ForgotPasswordPage from './pages/ForgotPasswordPage'
-import ResetPasswordPage from './pages/ResetPasswordPage'
-import LikesPage from './pages/LikesPage'
-import CategoryPage from './pages/CategoryPage'
-import ShopPage from './pages/ShopPage'
-import ProductDetailsPage from './pages/ProductDetailsPage'
 import ScrollToTop from './components/ScrollToTop'
+import LoadingAnimation from './components/LoadingAnimation'
+
+const ShopPage = lazy(() => import('./pages/ShopPage'))
+const ProductDetailsPage = lazy(() => import('./pages/ProductDetailsPage'))
+const CategoryPage = lazy(() => import('./pages/CategoryPage'))
+const CartPage = lazy(() => import('./pages/CartPage'))
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'))
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const RegisterPage = lazy(() => import('./pages/RegisterPage'))
+const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'))
+const OrderTrackerPage = lazy(() => import('./pages/OrderTrackerPage'))
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
+const LikesPage = lazy(() => import('./pages/LikesPage'))
 
 function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <ProductCatalogProvider>
-          <BrowserRouter>
-          <ScrollToTop />
-          <div className="min-h-screen bg-marea-bg text-marea-cream">
-            <Navbar />
-            <main>
-              <ErrorBoundary>
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/shop" element={<ShopPage />} />
-                  <Route path="/product/:slug" element={<ProductDetailsPage />} />
-                  <Route path="/category/:slug" element={<CategoryPage />} />
-                  <Route path="/cart" element={<CartPage />} />
-                  <Route path="/checkout" element={<CheckoutPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                  <Route path="/reset-password" element={<ResetPasswordPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
-                  <Route path="/verify-email" element={<VerifyEmailPage />} />
-                  <Route path="/likes" element={<LikesPage />} />
-                  <Route path="/order-tracker" element={<OrderTrackerPage />} />
-                  <Route path="/order-tracker/:orderId" element={<OrderTrackerPage />} />
-                </Routes>
-              </ErrorBoundary>
-            </main>
-            <Footer />
-          </div>
-        </BrowserRouter>
-        </ProductCatalogProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <LazyMotion features={domAnimation} strict>
+      <ThemeProvider>
+        <AuthProvider>
+          <ProductCatalogProvider>
+            <BrowserRouter>
+              <ScrollToTop />
+              <div className="min-h-screen bg-marea-bg text-marea-cream">
+                <Navbar />
+                <main>
+                  <ErrorBoundary>
+                    <Suspense fallback={<LoadingAnimation className="py-24" />}>
+                      <Routes>
+                        <Route path="/" element={<HomePage />} />
+                        <Route path="/shop" element={<ShopPage />} />
+                        <Route path="/product/:slug" element={<ProductDetailsPage />} />
+                        <Route path="/category/:slug" element={<CategoryPage />} />
+                        <Route path="/cart" element={<CartPage />} />
+                        <Route path="/checkout" element={<CheckoutPage />} />
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                        <Route path="/reset-password" element={<ResetPasswordPage />} />
+                        <Route path="/register" element={<RegisterPage />} />
+                        <Route path="/verify-email" element={<VerifyEmailPage />} />
+                        <Route path="/likes" element={<LikesPage />} />
+                        <Route path="/order-tracker" element={<OrderTrackerPage />} />
+                        <Route path="/order-tracker/:orderId" element={<OrderTrackerPage />} />
+                      </Routes>
+                    </Suspense>
+                  </ErrorBoundary>
+                </main>
+                <Footer />
+              </div>
+            </BrowserRouter>
+          </ProductCatalogProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </LazyMotion>
   )
 }
 

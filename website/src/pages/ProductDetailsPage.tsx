@@ -194,6 +194,9 @@ export default function ProductDetailsPage() {
                 src={images[activeImage]}
                 alt={product.name}
                 className={`h-full w-full object-cover ${product.stock <= 0 ? 'sold-out-image' : ''}`}
+                fetchPriority="high"
+                decoding="async"
+                sizes="(max-width: 1024px) 100vw, 50vw"
               />
             ) : (
               <div className="flex h-full items-center justify-center text-marea-muted">
