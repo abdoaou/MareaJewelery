@@ -11,12 +11,23 @@ const MAX_IMAGES = 5
 const MIN_IMAGES = 1
 const PAGE_SIZE = 15
 
-type SortOption = 'newest' | 'oldest' | 'price-asc' | 'price-desc' | 'stock-asc'
+type SortOption =
+  | 'newest'
+  | 'oldest'
+  | 'updated-newest'
+  | 'updated-oldest'
+  | 'price-asc'
+  | 'price-desc'
+  | 'stock-asc'
 
 function sortParams(sort: SortOption): { sortBy: string; sortOrder: string } {
   switch (sort) {
     case 'oldest':
       return { sortBy: 'createdAt', sortOrder: 'asc' }
+    case 'updated-newest':
+      return { sortBy: 'updatedAt', sortOrder: 'desc' }
+    case 'updated-oldest':
+      return { sortBy: 'updatedAt', sortOrder: 'asc' }
     case 'price-asc':
       return { sortBy: 'price', sortOrder: 'asc' }
     case 'price-desc':
@@ -402,6 +413,8 @@ export function ProductsPage() {
           >
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>
+            <option value="updated-newest">Updated: newest first</option>
+            <option value="updated-oldest">Updated: oldest first</option>
             <option value="price-asc">Price: low to high</option>
             <option value="price-desc">Price: high to low</option>
             <option value="stock-asc">Stock: low to high</option>

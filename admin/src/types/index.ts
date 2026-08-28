@@ -53,6 +53,7 @@ export interface Product {
   isBestSeller?: boolean
   isNewArrival?: boolean
   createdAt: string
+  updatedAt?: string
 }
 
 export interface Category {

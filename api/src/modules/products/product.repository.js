@@ -33,6 +33,7 @@ const listSelect = {
   isNewArrival: true,
   isRecommended: true,
   createdAt: true,
+  updatedAt: true,
   viewCount: true,
   categoryId: true,
   images: {
@@ -67,7 +68,14 @@ export const productRepository = {
       sortOrder: sortOrderParam,
     } = query
 
-    const sortBy = sortByParam === 'price' ? 'price' : sortByParam === 'stock' ? 'stock' : 'createdAt'
+    const sortBy =
+      sortByParam === 'price'
+        ? 'price'
+        : sortByParam === 'stock'
+          ? 'stock'
+          : sortByParam === 'updatedAt'
+            ? 'updatedAt'
+            : 'createdAt'
     const sortOrder = sortOrderParam === 'asc' ? 'asc' : 'desc'
 
     const cacheKey = listCacheKey(query)
