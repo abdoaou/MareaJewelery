@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoggedIn(false)
     useCartStore.setState({ apiItems: [] })
     clearWishlist()
-    void syncFromApi()
+    void syncFromApi({ silent: true })
   }, [clearWishlist, setLoggedIn, syncFromApi])
 
   useEffect(() => {
@@ -85,12 +85,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!localStorage.getItem('marea_customer_token') && !localStorage.getItem('marea_refresh_token')) {
             setCustomer(null)
             setLoggedIn(false)
-            await syncFromApi()
+            await syncFromApi({ silent: true })
           } else {
-            await Promise.all([syncFromApi(), syncWishlist()])
+            await Promise.all([syncFromApi({ silent: true }), syncWishlist({ silent: true })])
           }
         } else {
-          await syncFromApi()
+          await syncFromApi({ silent: true })
         }
       } catch {
         // stay as guest
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const res = await api.login({ email, password })
     completeAuth(res.data)
-    void Promise.all([syncFromApi(), syncWishlist()])
+    void Promise.all([syncFromApi({ silent: true }), syncWishlist({ silent: true })])
   }, [completeAuth, syncFromApi, syncWishlist])
 
   const register = useCallback(async (data: { email: string; password: string; fullName?: string; phone?: string }) => {
@@ -121,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     completeAuth(res.data as AuthResponse)
-    void Promise.all([syncFromApi(), syncWishlist()])
+    void Promise.all([syncFromApi({ silent: true }), syncWishlist({ silent: true })])
     return { requiresVerification: false }
   }, [completeAuth, syncFromApi, syncWishlist])
 

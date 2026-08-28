@@ -10,6 +10,8 @@ import StockBadge from '../components/StockBadge'
 import SoldOutOverlay from '../components/SoldOutOverlay'
 import ProductCard from '../components/ProductCard'
 import LoadingAnimation from '../components/LoadingAnimation'
+import LoadError from '../components/LoadError'
+import { getErrorMessage } from '../utils/errorMessage'
 import ImageLightbox from '../components/ImageLightbox'
 import { useCartStore } from '../store/cartStore'
 import { useWishlistStore } from '../store/wishlistStore'
@@ -96,7 +98,7 @@ export default function ProductDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [adding, setAdding] = useState(false)
-  const [actionError, setActionError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
 
   const liked = product?.apiProductId ? likedIds.includes(product.apiProductId) : false
 
@@ -112,7 +114,6 @@ export default function ProductDetailsPage() {
     loadDetail(slug)
       .then((detail) => {
         if (cancelled) return
-        // Show the product immediately; suggestions stream in below
         setProduct(detail)
         setLoading(false)
 
@@ -128,7 +129,7 @@ export default function ProductDetailsPage() {
         if (!cancelled) {
           setProduct(null)
           setSuggestions([])
-          setError(err instanceof Error ? err.message : t('product.loadFailed'))
+          setError(getErrorMessage(err, t('product.loadFailed')))
           setLoading(false)
         }
       })
@@ -136,7 +137,7 @@ export default function ProductDetailsPage() {
     return () => {
       cancelled = true
     }
-  }, [slug, t])
+  }, [slug, t, reloadKey])
 
   const images = useMemo(() => product?.images || [], [product])
 
@@ -148,11 +149,10 @@ export default function ProductDetailsPage() {
       return
     }
     setAdding(true)
-    setActionError('')
     try {
       await addToApi(product.apiProductId)
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : t('cart.addFailed'))
+    } catch {
+      // Toast shown by api layer
     } finally {
       setAdding(false)
     }
@@ -160,15 +160,12 @@ export default function ProductDetailsPage() {
 
   const handleLike = () => {
     if (!product?.apiProductId) return
-    setActionError('')
     if (!customer) {
       setPendingLike({ productId: product.apiProductId, returnTo: location.pathname })
       navigate('/login', { state: { from: location.pathname, reason: 'like' } })
       return
     }
-    void toggle(product.apiProductId).catch((err) => {
-      setActionError(err instanceof Error ? err.message : t('likes.failed'))
-    })
+    void toggle(product.apiProductId).catch(() => {})
   }
 
   if (loading) {
@@ -177,11 +174,16 @@ export default function ProductDetailsPage() {
 
   if (error || !product) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-24 text-center">
-        <p className="text-red-400">{error || t('product.notFound')}</p>
-        <Link to="/shop" className="btn-secondary mt-8 inline-flex">
-          {t('sections.bestSellers.viewAll')}
-        </Link>
+      <div className="mx-auto max-w-3xl px-6 py-24">
+        <LoadError
+          message={error || t('product.notFound')}
+          onRetry={error ? () => setReloadKey((k) => k + 1) : undefined}
+        />
+        <div className="mt-8 text-center">
+          <Link to="/shop" className="btn-secondary inline-flex">
+            {t('sections.bestSellers.viewAll')}
+          </Link>
+        </div>
       </div>
     )
   }
@@ -299,8 +301,6 @@ export default function ProductDetailsPage() {
               </ul>
             </div>
           )}
-
-          {actionError && <p className="mt-4 text-sm text-red-400">{actionError}</p>}
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <button

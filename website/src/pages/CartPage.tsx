@@ -6,6 +6,8 @@ import { useCartStore } from '../store/cartStore'
 import { useAuth } from '../context/AuthContext'
 import { formatPrice } from '../utils/formatPrice'
 import LoadingAnimation from '../components/LoadingAnimation'
+import LoadError from '../components/LoadError'
+import { getErrorMessage } from '../utils/errorMessage'
 
 export default function CartPage() {
   const { t } = useTranslation()
@@ -13,17 +15,23 @@ export default function CartPage() {
   const { apiItems, updateApiQty, removeApiItem, syncFromApi } = useCartStore()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [loadError, setLoadError] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    syncFromApi().finally(() => {
-      if (!cancelled) setLoading(false)
-    })
+    setLoadError('')
+    syncFromApi()
+      .catch((err) => {
+        if (!cancelled) setLoadError(getErrorMessage(err, t('cart.loadFailed')))
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
     return () => {
       cancelled = true
     }
-  }, [syncFromApi])
+  }, [syncFromApi, t])
 
   const items = apiItems.map((i) => ({
     id: i.id,
@@ -51,6 +59,19 @@ export default function CartPage() {
 
   if (loading) {
     return <LoadingAnimation className="py-24" />
+  }
+
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-24">
+        <h1 className="font-serif text-3xl">{t('cart.title')}</h1>
+        <LoadError message={loadError} onRetry={() => {
+          setLoading(true)
+          setLoadError('')
+          void syncFromApi().finally(() => setLoading(false))
+        }} />
+      </div>
+    )
   }
 
   if (!items.length) {

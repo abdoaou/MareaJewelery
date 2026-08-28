@@ -5,9 +5,13 @@ import {
   expireSession,
 } from './authSession'
 import { availableStock } from '../utils/mapProduct'
+import { reportError } from './errorReporter'
+import i18n from '../i18n'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1'
 const API_KEY = import.meta.env.VITE_API_KEY || ''
+
+export type ApiRequestInit = RequestInit & { silent?: boolean }
 
 function getSessionId() {
   let id = localStorage.getItem('marea_session_id')
@@ -32,22 +36,35 @@ async function rawFetch(path: string, options: RequestInit = {}, token?: string 
   const access = token === undefined ? getAccessToken() : token
   if (access) headers.Authorization = `Bearer ${access}`
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
-  const data = await res.json().catch(() => ({}))
-  return { res, data }
+  try {
+    const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
+    const data = await res.json().catch(() => ({}))
+    return { res, data }
+  } catch {
+    throw new Error(i18n.t('common.networkError'))
+  }
 }
 
-async function request<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
-  const { res, data } = await rawFetch(path, options)
+async function request<T>(
+  path: string,
+  options: ApiRequestInit = {},
+  retried = false,
+): Promise<T> {
+  const { silent, ...fetchOptions } = options
+  const { res, data } = await rawFetch(path, fetchOptions)
 
   if (res.status === 401 && !retried && !path.startsWith('/auth/')) {
     const ok = await refreshSession(API_BASE, API_KEY)
     if (ok) return request<T>(path, options, true)
     expireSession()
+    if (!silent) reportError(i18n.t('common.sessionExpired'))
+    throw new Error(i18n.t('common.sessionExpired'))
   }
 
   if (!res.ok) {
-    throw new Error(data.message || 'Request failed')
+    const message = data.message || i18n.t('common.genericError')
+    if (!silent && !path.startsWith('/auth/')) reportError(message)
+    throw new Error(message)
   }
 
   return data as T
@@ -489,12 +506,9 @@ export const api = {
       body: JSON.stringify({ refreshToken }),
     }),
 
-  getCart: async () => {
-
-    const res = await request<{ data: ApiCart }>('/cart')
-
+  getCart: async (opts?: { silent?: boolean }) => {
+    const res = await request<{ data: ApiCart }>('/cart', { silent: opts?.silent })
     return { data: mapCart(res.data) }
-
   },
 
   addToCart: async (productId: string, quantity = 1) => {
@@ -559,9 +573,11 @@ export const api = {
 
   },
 
-  getWishlist: () => request<{ data: LikedItem[] }>('/wishlist'),
+  getWishlist: (opts?: { silent?: boolean }) =>
+    request<{ data: LikedItem[] }>('/wishlist', { silent: opts?.silent }),
 
-  getWishlistIds: () => request<{ data: string[] }>('/wishlist/ids'),
+  getWishlistIds: (opts?: { silent?: boolean }) =>
+    request<{ data: string[] }>('/wishlist/ids', { silent: opts?.silent }),
 
   toggleWishlist: (productId: string) =>
     request<{ data: { liked: boolean; productId: string } }>(`/wishlist/${productId}/toggle`, {

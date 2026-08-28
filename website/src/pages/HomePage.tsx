@@ -1,6 +1,5 @@
 import Hero from '../components/Hero'
 import Collections from '../components/Collections'
-import ShopByCategory from '../components/ShopByCategory'
 import MareaPromise from '../components/MareaPromise'
 import WhyChoose from '../components/WhyChoose'
 import Testimonials from '../components/Testimonials'
@@ -12,7 +11,6 @@ export default function HomePage() {
     <>
       <Hero />
       <Collections />
-      <ShopByCategory />
       <MareaPromise />
       <WhyChoose />
       <Testimonials />

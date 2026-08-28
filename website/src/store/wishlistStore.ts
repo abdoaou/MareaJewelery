@@ -6,7 +6,7 @@ interface WishlistState {
   items: LikedItem[]
   loaded: boolean
   pending: Record<string, boolean>
-  sync: () => Promise<void>
+  sync: (opts?: { silent?: boolean }) => Promise<void>
   toggle: (productId: string) => Promise<boolean>
   isLiked: (productId: string) => boolean
   clear: () => void
@@ -18,12 +18,16 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
   loaded: false,
   pending: {},
 
-  sync: async () => {
+  sync: async (opts) => {
     try {
-      const [idsRes, listRes] = await Promise.all([api.getWishlistIds(), api.getWishlist()])
+      const [idsRes, listRes] = await Promise.all([
+        api.getWishlistIds(opts),
+        api.getWishlist(opts),
+      ])
       set({ likedIds: idsRes.data, items: listRes.data, loaded: true })
-    } catch {
+    } catch (err) {
       set({ likedIds: [], items: [], loaded: true })
+      throw err
     }
   },
 

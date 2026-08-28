@@ -26,7 +26,6 @@ function ProductCard({ product }: ProductCardProps) {
   const { customer } = useAuth()
   const { resolveApiId } = useProductCatalog()
   const [adding, setAdding] = useState(false)
-  const [error, setError] = useState('')
   const [resolvedId, setResolvedId] = useState(product.apiProductId || '')
   const [heartPop, setHeartPop] = useState(false)
 
@@ -55,7 +54,6 @@ function ProductCard({ product }: ProductCardProps) {
   const handleLike = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setError('')
     setHeartPop(true)
     window.setTimeout(() => setHeartPop(false), 280)
 
@@ -67,18 +65,13 @@ function ProductCard({ product }: ProductCardProps) {
         navigate('/login', { state: { from: location.pathname, reason: 'like' } })
         return
       }
-      void toggle(knownId).catch((err) => {
-        setError(err instanceof Error ? err.message : t('likes.failed'))
-      })
+      void toggle(knownId).catch(() => {})
       return
     }
 
     void (async () => {
       const id = await resolveId()
-      if (!id) {
-        setError(t('likes.failed'))
-        return
-      }
+      if (!id) return
       if (!customer) {
         setPendingLike({ productId: id, returnTo: location.pathname })
         navigate('/login', { state: { from: location.pathname, reason: 'like' } })
@@ -86,8 +79,8 @@ function ProductCard({ product }: ProductCardProps) {
       }
       try {
         await toggle(id)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : t('likes.failed'))
+      } catch {
+        /* toast from api */
       }
     })()
   }
@@ -98,14 +91,10 @@ function ProductCard({ product }: ProductCardProps) {
     if (product.stock <= 0 || adding) return
 
     setAdding(true)
-    setError('')
 
     try {
       const id = await resolveId()
-      if (!id) {
-        setError(t('cart.addFailed'))
-        return
-      }
+      if (!id) return
 
       if (!customer) {
         setPendingAdd({ productId: id, returnTo: location.pathname })
@@ -114,8 +103,8 @@ function ProductCard({ product }: ProductCardProps) {
       }
 
       await addToApi(id)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('cart.addFailed'))
+    } catch {
+      /* toast from api */
     } finally {
       setAdding(false)
     }
@@ -178,7 +167,6 @@ function ProductCard({ product }: ProductCardProps) {
             {product.rating}
           </div>
         </div>
-        {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
         <button
           type="button"
           onClick={handleAdd}

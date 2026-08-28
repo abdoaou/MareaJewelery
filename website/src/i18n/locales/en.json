@@ -203,6 +203,7 @@
     "jewelryCare": "Jewelry Care",
     "faq": "FAQ",
     "instagram": "Instagram",
+    "whatsapp": "Contact us on WhatsApp",
     "copyright": "© 2026 Marea Jewelry. All rights reserved."
   },
   "cart": {
@@ -220,7 +221,8 @@
     "loginToAdd": "Sign in or create an account to add items to your cart.",
     "loginRequired": "Sign in to view your cart and checkout.",
     "addFailed": "Could not add item to cart. Please try again.",
-    "updateFailed": "Could not update cart. Please try again."
+    "updateFailed": "Could not update cart. Please try again.",
+    "loadFailed": "Could not load your cart. Please try again."
   },
   "checkout": {
     "title": "Checkout",
@@ -304,6 +306,9 @@
     "language": "Language",
     "tryAgain": "Try again",
     "errorLoad": "Something went wrong loading this section.",
+    "genericError": "Something went wrong. Please try again.",
+    "networkError": "Could not reach the server. Check your connection.",
+    "sessionExpired": "Your session expired. Please sign in again.",
     "loading": "..."
   },
   "shop": {
@@ -312,7 +317,7 @@
     "searchEmpty": "No pieces found for \"{{query}}\".",
     "empty": "No products to show yet.",
     "emptyCategory": "No products in this category yet.",
-    "loadFailed": "Could not load this category.",
+    "loadFailed": "Could not load products.",
     "categoryFallback": "Category"
   },
   "product": {
@@ -337,6 +342,7 @@
     "like": "Like",
     "unlike": "Unlike",
     "failed": "Could not update like. Please try again.",
+    "loadFailed": "Could not load your likes. Please try again.",
     "loginRequired": "Sign in to save pieces you love."
   },
   "orderTracker": {

@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { Product } from '../data/products'
 import { api } from '../services/api'
 import { mapApiProduct } from '../utils/mapProduct'
 import { cached } from '../utils/clientCache'
+import { getErrorMessage } from '../utils/errorMessage'
 import ProductCard from '../components/ProductCard'
 import LoadingAnimation from '../components/LoadingAnimation'
+import LoadError from '../components/LoadError'
 
 export default function CategoryPage() {
   const { t } = useTranslation()
@@ -16,38 +18,34 @@ export default function CategoryPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (!slug) return
-    let cancelled = false
     setLoading(true)
     setError('')
 
-    cached(`category:${slug}`, 60_000, () =>
+    cached(`category:${slug}:${reloadKey}`, 60_000, () =>
       Promise.all([
         api.getCategoryBySlug(slug),
         api.getProducts({ status: 'PUBLISHED', categorySlug: slug, limit: 100 }),
       ]),
     )
       .then(([catRes, prodRes]) => {
-        if (cancelled) return
         setTitle(catRes.data.name)
         setDescription(catRes.data.description || '')
         setProducts((prodRes.data || []).map(mapApiProduct))
       })
       .catch((err) => {
-        if (cancelled) return
-        setError(err instanceof Error ? err.message : t('shop.loadFailed'))
+        setError(getErrorMessage(err, t('shop.loadFailed')))
         setProducts([])
       })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
+      .finally(() => setLoading(false))
+  }, [slug, reloadKey, t])
 
-    return () => {
-      cancelled = true
-    }
-  }, [slug, t])
+  useEffect(() => {
+    load()
+  }, [load])
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
@@ -57,10 +55,10 @@ export default function CategoryPage() {
       </h1>
       {description ? <p className="mt-4 max-w-2xl text-marea-muted">{description}</p> : null}
 
-      {error && <p className="mt-6 text-sm text-red-400">{error}</p>}
-
       {loading ? (
         <LoadingAnimation className="mt-16" />
+      ) : error ? (
+        <LoadError message={error} onRetry={() => setReloadKey((k) => k + 1)} />
       ) : products.length === 0 ? (
         <div className="mt-16 text-center">
           <p className="text-marea-muted">{t('shop.emptyCategory')}</p>

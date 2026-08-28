@@ -19,7 +19,7 @@ interface CartState {
   removeLocal: (productId: string) => void
   updateLocalQty: (productId: string, quantity: number) => void
   clearLocal: () => void
-  syncFromApi: () => Promise<void>
+  syncFromApi: (opts?: { silent?: boolean }) => Promise<void>
   addToApi: (productId: string) => Promise<void>
   updateApiQty: (itemId: string, quantity: number) => Promise<void>
   removeApiItem: (itemId: string) => Promise<void>
@@ -66,12 +66,13 @@ export const useCartStore = create<CartState>()(
 
       clearLocal: () => set({ localItems: [] }),
 
-      syncFromApi: async () => {
+      syncFromApi: async (opts) => {
         try {
-          const res = await api.getCart()
+          const res = await api.getCart(opts)
           set({ apiItems: res.data.items })
-        } catch {
+        } catch (err) {
           set({ apiItems: [] })
+          throw err
         }
       },
 

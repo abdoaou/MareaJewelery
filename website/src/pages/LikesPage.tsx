@@ -1,25 +1,30 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Heart } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useWishlistStore } from '../store/wishlistStore'
 import { formatPrice } from '../utils/formatPrice'
+import { getErrorMessage } from '../utils/errorMessage'
 import LoadingAnimation from '../components/LoadingAnimation'
+import LoadError from '../components/LoadError'
 
 export default function LikesPage() {
   const { t } = useTranslation()
   const { customer } = useAuth()
   const navigate = useNavigate()
   const { items, sync, toggle, loaded } = useWishlistStore()
+  const [error, setError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     if (!customer) {
       navigate('/login', { state: { from: '/likes', reason: 'like' } })
       return
     }
-    sync()
-  }, [customer, navigate, sync])
+    setError('')
+    sync().catch((err) => setError(getErrorMessage(err, t('likes.loadFailed'))))
+  }, [customer, navigate, sync, reloadKey, t])
 
   if (!customer) {
     return (
@@ -29,8 +34,17 @@ export default function LikesPage() {
     )
   }
 
-  if (!loaded) {
+  if (!loaded && !error) {
     return <LoadingAnimation className="py-24" />
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-24">
+        <h1 className="font-serif text-3xl">{t('likes.title')}</h1>
+        <LoadError message={error} onRetry={() => setReloadKey((k) => k + 1)} />
+      </div>
+    )
   }
 
   if (!items.length) {
@@ -77,7 +91,7 @@ export default function LikesPage() {
               <button
                 type="button"
                 className="rounded-full border border-marea-border p-2 text-marea-gold hover:border-marea-gold"
-                onClick={() => toggle(item.productId)}
+                onClick={() => toggle(item.productId).catch(() => {})}
                 aria-label={t('likes.unlike')}
               >
                 <Heart size={18} className="fill-marea-gold" />

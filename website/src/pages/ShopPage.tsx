@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { Product } from '../data/products'
 import { api } from '../services/api'
 import { mapApiProduct } from '../utils/mapProduct'
 import { cached } from '../utils/clientCache'
+import { getErrorMessage } from '../utils/errorMessage'
 import ProductCard from '../components/ProductCard'
 import LoadingAnimation from '../components/LoadingAnimation'
+import LoadError from '../components/LoadError'
 
 export default function ShopPage() {
   const { t } = useTranslation()
@@ -18,6 +20,8 @@ export default function ShopPage() {
 
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
 
   const title = useMemo(() => {
     if (searchQuery) return t('shop.searchResults', { query: searchQuery })
@@ -26,33 +30,30 @@ export default function ShopPage() {
     return t('shop.allProducts')
   }, [bestSeller, newest, newArrival, searchQuery, t])
 
-  useEffect(() => {
-    let cancelled = false
+  const load = useCallback(() => {
     setLoading(true)
-    cached(`shop:${bestSeller}:${newArrival}:${newest}:${searchQuery}`, 60_000, async () => {
+    setError('')
+    return cached(`shop:${bestSeller}:${newArrival}:${newest}:${searchQuery}:${reloadKey}`, 60_000, async () => {
       const res = await api.getProducts({
         status: 'PUBLISHED',
         limit: 100,
         ...(bestSeller ? { bestSeller: true } : {}),
-        // newest=1 = createdAt desc (API default); newArrival keeps the flag filter
         ...(!newest && newArrival ? { newArrival: true } : {}),
         ...(searchQuery ? { search: searchQuery } : {}),
       })
       return (res.data || []).map(mapApiProduct)
     })
-      .then((items) => {
-        if (!cancelled) setProducts(items)
+      .then((items) => setProducts(items))
+      .catch((err) => {
+        setProducts([])
+        setError(getErrorMessage(err, t('shop.loadFailed')))
       })
-      .catch(() => {
-        if (!cancelled) setProducts([])
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [bestSeller, newArrival, newest, searchQuery])
+      .finally(() => setLoading(false))
+  }, [bestSeller, newArrival, newest, searchQuery, reloadKey, t])
+
+  useEffect(() => {
+    void load()
+  }, [load])
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
@@ -60,6 +61,8 @@ export default function ShopPage() {
 
       {loading ? (
         <LoadingAnimation className="mt-16" />
+      ) : error ? (
+        <LoadError message={error} onRetry={() => setReloadKey((k) => k + 1)} />
       ) : products.length === 0 ? (
         <div className="mt-16 text-center">
           <p className="text-marea-muted">

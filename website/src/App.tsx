@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { LazyMotion, domAnimation } from 'framer-motion'
+import { ToastProvider } from './context/ToastContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider } from './context/AuthContext'
 import { ProductCatalogProvider } from './context/ProductCatalogContext'
@@ -29,9 +30,10 @@ function App() {
   return (
     <LazyMotion features={domAnimation} strict>
       <ThemeProvider>
-        <AuthProvider>
-          <ProductCatalogProvider>
-            <BrowserRouter>
+        <ToastProvider>
+          <AuthProvider>
+            <ProductCatalogProvider>
+              <BrowserRouter>
               <ScrollToTop />
               <VisitTracker />
               <div className="min-h-screen bg-marea-bg text-marea-cream">
@@ -63,6 +65,7 @@ function App() {
             </BrowserRouter>
           </ProductCatalogProvider>
         </AuthProvider>
+        </ToastProvider>
       </ThemeProvider>
     </LazyMotion>
   )
