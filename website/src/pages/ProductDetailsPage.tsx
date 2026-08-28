@@ -10,6 +10,7 @@ import StockBadge from '../components/StockBadge'
 import SoldOutOverlay from '../components/SoldOutOverlay'
 import ProductCard from '../components/ProductCard'
 import LoadingAnimation from '../components/LoadingAnimation'
+import ImageLightbox from '../components/ImageLightbox'
 import { useCartStore } from '../store/cartStore'
 import { useWishlistStore } from '../store/wishlistStore'
 import { useAuth } from '../context/AuthContext'
@@ -91,6 +92,7 @@ export default function ProductDetailsPage() {
   const [product, setProduct] = useState<ProductDetail | null>(null)
   const [suggestions, setSuggestions] = useState<Product[]>([])
   const [activeImage, setActiveImage] = useState(0)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [adding, setAdding] = useState(false)
@@ -104,6 +106,7 @@ export default function ProductDetailsPage() {
     setLoading(true)
     setError('')
     setActiveImage(0)
+    setLightboxOpen(false)
     setSuggestions([])
 
     loadDetail(slug)
@@ -190,14 +193,21 @@ export default function ProductDetailsPage() {
           <div className="relative aspect-square overflow-hidden rounded-2xl border border-marea-border bg-marea-bg-soft">
             {product.stock <= 0 && <SoldOutOverlay />}
             {images[activeImage] ? (
-              <img
-                src={images[activeImage]}
-                alt={product.name}
-                className={`h-full w-full object-cover ${product.stock <= 0 ? 'sold-out-image' : ''}`}
-                fetchPriority="high"
-                decoding="async"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
+              <button
+                type="button"
+                onClick={() => setLightboxOpen(true)}
+                className="group h-full w-full cursor-zoom-in"
+                aria-label={t('product.enlargeImage')}
+              >
+                <img
+                  src={images[activeImage]}
+                  alt={product.name}
+                  className={`h-full w-full object-cover transition group-hover:opacity-95 ${product.stock <= 0 ? 'sold-out-image' : ''}`}
+                  fetchPriority="high"
+                  decoding="async"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
+              </button>
             ) : (
               <div className="flex h-full items-center justify-center text-marea-muted">
                 {t('product.noImage')}
@@ -210,7 +220,10 @@ export default function ProductDetailsPage() {
                 <button
                   key={`${url}-${index}`}
                   type="button"
-                  onClick={() => setActiveImage(index)}
+                  onClick={() => {
+                    setActiveImage(index)
+                    setLightboxOpen(true)
+                  }}
                   className={`aspect-square overflow-hidden rounded-xl border transition ${
                     index === activeImage
                       ? 'border-marea-gold ring-2 ring-marea-gold/40'
@@ -329,6 +342,15 @@ export default function ProductDetailsPage() {
           </div>
         </section>
       )}
+
+      <ImageLightbox
+        open={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        images={images}
+        index={activeImage}
+        onIndexChange={setActiveImage}
+        alt={product.name}
+      />
     </div>
   )
 }
