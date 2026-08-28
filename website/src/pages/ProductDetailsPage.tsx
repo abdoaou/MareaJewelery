@@ -349,7 +349,7 @@ export default function ProductDetailsPage() {
         images={images}
         index={activeImage}
         onIndexChange={setActiveImage}
-        alt={product.name}
+        alt={product.name ?? ''}
       />
     </div>
   )
