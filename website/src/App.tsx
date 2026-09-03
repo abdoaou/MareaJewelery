@@ -34,10 +34,10 @@ function App() {
         <ToastProvider>
           <AuthProvider>
             <ProductCatalogProvider>
-              <LuckyWheelProvider>
               <BrowserRouter>
               <ScrollToTop />
               <VisitTracker />
+              <LuckyWheelProvider>
               <div className="min-h-screen bg-marea-bg text-marea-cream">
                 <Navbar />
                 <main>
@@ -64,8 +64,8 @@ function App() {
                 </main>
                 <Footer />
               </div>
-            </BrowserRouter>
               </LuckyWheelProvider>
+            </BrowserRouter>
           </ProductCatalogProvider>
         </AuthProvider>
         </ToastProvider>
