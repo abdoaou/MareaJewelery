@@ -5,6 +5,7 @@ import { ToastProvider } from './context/ToastContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider } from './context/AuthContext'
 import { ProductCatalogProvider } from './context/ProductCatalogContext'
+import { LuckyWheelProvider } from './components/lucky-wheel/LuckyWheelProvider'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -33,6 +34,7 @@ function App() {
         <ToastProvider>
           <AuthProvider>
             <ProductCatalogProvider>
+              <LuckyWheelProvider>
               <BrowserRouter>
               <ScrollToTop />
               <VisitTracker />
@@ -63,6 +65,7 @@ function App() {
                 <Footer />
               </div>
             </BrowserRouter>
+              </LuckyWheelProvider>
           </ProductCatalogProvider>
         </AuthProvider>
         </ToastProvider>

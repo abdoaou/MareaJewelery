@@ -109,6 +109,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await api.login({ email, password })
     completeAuth(res.data)
     void Promise.all([syncFromApi({ silent: true }), syncWishlist({ silent: true })])
+    const spinId = localStorage.getItem('marea_wheel_pending_spin_id')
+    if (spinId) {
+      void api.claimWheel(spinId).then(() => {
+        localStorage.removeItem('marea_wheel_pending_spin_id')
+      }).catch(() => {})
+    }
   }, [completeAuth, syncFromApi, syncWishlist])
 
   const register = useCallback(async (data: { email: string; password: string; fullName?: string; phone?: string }) => {
@@ -122,6 +128,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     completeAuth(res.data as AuthResponse)
     void Promise.all([syncFromApi({ silent: true }), syncWishlist({ silent: true })])
+    const spinId = localStorage.getItem('marea_wheel_pending_spin_id')
+    if (spinId) {
+      void api.claimWheel(spinId).then(() => {
+        localStorage.removeItem('marea_wheel_pending_spin_id')
+      }).catch(() => {})
+    }
     return { requiresVerification: false }
   }, [completeAuth, syncFromApi, syncWishlist])
 

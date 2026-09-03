@@ -238,6 +238,8 @@ function mapCheckoutBody(body: CheckoutBody) {
 
     billingAddress: address,
 
+    ...(body.coupon_code ? { couponCode: body.coupon_code.trim().toUpperCase() } : {}),
+
   }
 
 }
@@ -598,6 +600,27 @@ export const api = {
 
     }),
 
+  getWheelPrizes: (opts?: { silent?: boolean }) =>
+    request<{ data: WheelPrize[] }>('/wheel/prizes', { silent: opts?.silent }),
+
+  getWheelStatus: (opts?: { silent?: boolean }) =>
+    request<{ data: WheelStatus }>('/wheel/status', { silent: opts?.silent }),
+
+  spinWheel: () =>
+    request<{ data: WheelSpinResult }>('/wheel/spin', { method: 'POST' }),
+
+  claimWheel: (spinId?: string) =>
+    request<{ data: WheelSpinResult }>('/wheel/claim', {
+      method: 'POST',
+      body: JSON.stringify({ spinId }),
+    }),
+
+  validateCoupon: (code: string, subtotal: number, shipping = 0) =>
+    request<{ data: CouponValidation }>('/coupons/validate', {
+      method: 'POST',
+      body: JSON.stringify({ code, subtotal, shipping }),
+    }),
+
 }
 
 
@@ -701,6 +724,80 @@ export interface CheckoutBody {
   notes?: string
 
   payment_method: 'cod'
+
+  coupon_code?: string
+
+}
+
+
+
+export interface WheelPrize {
+
+  id: string
+
+  name: string
+
+  type: string
+
+  value: number | null
+
+  sortOrder: number
+
+}
+
+
+
+export interface WheelSpinResult {
+
+  spinId: string
+
+  segmentIndex: number
+
+  prize: { id: string; name: string; type: string; value: number | null } | null
+
+  couponCode: string | null
+
+  isWinner: boolean
+
+  claimed: boolean
+
+  requiresLogin: boolean
+
+  alreadyUsed: boolean
+
+}
+
+
+
+export interface WheelStatus {
+
+  canSpin: boolean
+
+  hasActivePrizes: boolean
+
+  alreadySpun: boolean
+
+  result: WheelSpinResult | null
+
+}
+
+
+
+export interface CouponValidation {
+
+  code: string
+
+  discountType: string
+
+  discountValue: number
+
+  discount: number
+
+  freeShipping: boolean
+
+  shipping: number
+
+  expiresAt?: string | null
 
 }
 

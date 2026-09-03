@@ -2,6 +2,7 @@ import prisma from '../../config/prisma.js'
 import { ValidationError } from '../../shared/errors/AppError.js'
 import { notifyAdmin, broadcastLiveSale } from '../../sockets/index.js'
 import { emailQueue } from '../../jobs/queues/email.queue.js'
+import { couponService } from '../coupons/coupon.service.js'
 
 function orderNumber() {
   return `MR-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
@@ -44,53 +45,79 @@ export const orderService = {
     }
 
     const tax = Number(body.tax || 0)
-    const shipping = Number(body.shipping || 0)
-    const discount = Number(body.discount || 0)
-    const total = subtotal + tax + shipping - discount
+    let shipping = Number(body.shipping || 0)
+    let discount = 0
+    let couponId = null
+    let wheelSpinId = null
 
-    const order = await prisma.order.create({
-      data: {
-        orderNumber: orderNumber(),
+    if (body.couponCode) {
+      if (!userId) throw new ValidationError('Login required to use a coupon')
+      const couponResult = await couponService.validateForCheckout(
         userId,
-        status: options.initialStatus || 'PENDING',
-        paymentMethod: body.paymentMethod || 'COD',
-        paymentStatus: body.paymentMethod === 'COD' ? 'PENDING' : 'PENDING',
+        body.couponCode,
         subtotal,
-        tax,
         shipping,
-        discount,
-        total,
-        shippingAddress: body.shippingAddress,
-        billingAddress: body.billingAddress,
-        customerNotes: body.customerNotes,
-        adminNotes: body.adminNotes,
-        items: {
-          create: orderItems.map((i) => ({
-            productId: i.product.id,
-            variantId: i.variantId,
-            productName: i.product.name,
-            sku: i.product.sku,
-            quantity: i.qty,
-            unitPrice: i.unitPrice,
-            lineTotal: i.unitPrice * i.qty,
-          })),
-        },
-        statusHistory: {
-          create: {
-            status: options.initialStatus || 'PENDING',
-            note: options.statusNote || 'Order placed',
-            createdBy: options.createdBy,
+      )
+      discount = couponResult.discount
+      shipping = couponResult.shipping
+      couponId = couponResult.coupon.id
+      wheelSpinId = couponResult.wheelSpin?.id ?? null
+    }
+
+    const total = Math.max(0, subtotal + tax + shipping - discount)
+
+    const order = await prisma.$transaction(async (tx) => {
+      const created = await tx.order.create({
+        data: {
+          orderNumber: orderNumber(),
+          userId,
+          status: options.initialStatus || 'PENDING',
+          paymentMethod: body.paymentMethod || 'COD',
+          paymentStatus: body.paymentMethod === 'COD' ? 'PENDING' : 'PENDING',
+          subtotal,
+          tax,
+          shipping,
+          discount,
+          total,
+          couponId,
+          shippingAddress: body.shippingAddress,
+          billingAddress: body.billingAddress,
+          customerNotes: body.customerNotes,
+          adminNotes: body.adminNotes,
+          items: {
+            create: orderItems.map((i) => ({
+              productId: i.product.id,
+              variantId: i.variantId,
+              productName: i.product.name,
+              sku: i.product.sku,
+              quantity: i.qty,
+              unitPrice: i.unitPrice,
+              lineTotal: i.unitPrice * i.qty,
+            })),
+          },
+          statusHistory: {
+            create: {
+              status: options.initialStatus || 'PENDING',
+              note: options.statusNote || 'Order placed',
+              createdBy: options.createdBy,
+            },
+          },
+          payments: {
+            create: {
+              method: body.paymentMethod || 'COD',
+              status: 'PENDING',
+              amount: total,
+            },
           },
         },
-        payments: {
-          create: {
-            method: body.paymentMethod || 'COD',
-            status: 'PENDING',
-            amount: total,
-          },
-        },
-      },
-      include: orderItemsInclude,
+        include: orderItemsInclude,
+      })
+
+      if (couponId) {
+        await couponService.redeemOnOrder(tx, couponId, wheelSpinId)
+      }
+
+      return created
     })
 
     if (!options.skipStockCheck) {

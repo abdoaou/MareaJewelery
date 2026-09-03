@@ -230,3 +230,51 @@ export const customersApi = {
       body: JSON.stringify(body),
     }),
 }
+
+export type WheelStats = {
+  totalSpins: number
+  totalWinners: number
+  mostWonPrize: { id: string; name: string; count: number } | null
+  couponsUsed: number
+  couponsRemaining: number
+  prizeCount: number
+}
+
+export type WheelPrize = {
+  id: string
+  name: string
+  type: string
+  value: number | null
+  probability: number
+  stock: number | null
+  active: boolean
+  sortOrder: number
+  expiresAt: string | null
+  createdAt: string
+}
+
+export type WheelSpinRow = {
+  id: string
+  userId: string | null
+  sessionId: string | null
+  couponCode: string | null
+  claimedAt: string | null
+  usedAt: string | null
+  createdAt: string
+  prize?: { name: string; type: string }
+  user?: { email: string; firstName?: string | null; lastName?: string | null }
+}
+
+export const wheelApi = {
+  stats: () => api<WheelStats>('/wheel/admin/stats'),
+  listPrizes: () => api<WheelPrize[]>('/wheel/admin/prizes'),
+  createPrize: (data: Record<string, unknown>) =>
+    api<WheelPrize>('/wheel/admin/prizes', { method: 'POST', body: JSON.stringify(data) }),
+  updatePrize: (id: string, data: Record<string, unknown>) =>
+    api<WheelPrize>(`/wheel/admin/prizes/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deletePrize: (id: string) => api(`/wheel/admin/prizes/${id}`, { method: 'DELETE' }),
+  listSpins: (params: Record<string, string> = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return api<WheelSpinRow[]>(`/wheel/admin/spins${q ? `?${q}` : ''}`)
+  },
+}

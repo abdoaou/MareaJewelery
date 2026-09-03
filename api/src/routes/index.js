@@ -7,6 +7,8 @@ import orderRoutes from '../modules/orders/order.routes.js'
 import adminRoutes from '../modules/admin/admin.routes.js'
 import publicRoutes from '../modules/public/public.routes.js'
 import wishlistRoutes from '../modules/wishlist/wishlist.routes.js'
+import wheelRoutes from '../modules/wheel/wheel.routes.js'
+import couponRoutes from '../modules/coupons/coupon.routes.js'
 
 const router = Router()
 
@@ -18,6 +20,8 @@ router.use('/orders', orderRoutes)
 router.use('/admin', adminRoutes)
 router.use('/public', publicRoutes)
 router.use('/wishlist', wishlistRoutes)
+router.use('/wheel', wheelRoutes)
+router.use('/coupons', couponRoutes)
 
 router.get('/health', (_req, res) => {
   res.json({

@@ -6,6 +6,7 @@ import {
   FolderTree,
   Warehouse,
   Users,
+  Gift,
   LogOut,
   Gem,
   X,
@@ -20,6 +21,7 @@ const links = [
   { to: '/categories', icon: FolderTree, label: 'Categories' },
   { to: '/inventory', icon: Warehouse, label: 'Inventory' },
   { to: '/customers', icon: Users, label: 'Customers' },
+  { to: '/wheel', icon: Gift, label: 'Lucky Wheel' },
 ]
 
 interface SidebarProps {

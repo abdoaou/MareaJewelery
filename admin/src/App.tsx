@@ -10,6 +10,7 @@ import { ProductsPage } from './pages/ProductsPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { InventoryPage } from './pages/InventoryPage'
 import { CustomersPage } from './pages/CustomersPage'
+import { WheelPage } from './pages/WheelPage'
 import { Skeleton } from './components/ui/EmptyState'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="inventory" element={<InventoryPage />} />
           <Route path="customers" element={<CustomersPage />} />
+          <Route path="wheel" element={<WheelPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

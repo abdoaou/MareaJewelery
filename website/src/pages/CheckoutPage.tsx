@@ -42,6 +42,37 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [deliveryAcknowledged, setDeliveryAcknowledged] = useState(false)
+  const [couponCode, setCouponCode] = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string
+    discount: number
+  } | null>(null)
+
+  const shipping = 0
+  const discount = appliedCoupon?.discount ?? 0
+  const total = Math.max(0, subtotal - discount)
+
+  const applyCoupon = async () => {
+    const code = couponCode.trim()
+    if (!code) return
+    setCouponLoading(true)
+    setError('')
+    try {
+      const res = await api.validateCoupon(code, subtotal, shipping)
+      setAppliedCoupon({ code: res.data.code, discount: res.data.discount })
+    } catch (err) {
+      setAppliedCoupon(null)
+      setError(err instanceof Error ? err.message : t('checkout.failed'))
+    } finally {
+      setCouponLoading(false)
+    }
+  }
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null)
+    setCouponCode('')
+  }
 
   const setLocation = () => {
     if (!navigator.geolocation) return
@@ -67,6 +98,7 @@ export default function CheckoutPage() {
         items: cartItems,
         ...form,
         payment_method: 'cod',
+        ...(appliedCoupon ? { coupon_code: appliedCoupon.code } : {}),
       })
       await clearApiCart()
       navigate(`/order-tracker/${res.data.id}`)
@@ -107,6 +139,47 @@ export default function CheckoutPage() {
           <span className="text-marea-muted">{t('checkout.subtotal')}</span>
           <span className="price-en font-medium text-marea-cream">{formatPrice(subtotal)}</span>
         </div>
+        {appliedCoupon && (
+          <div className="mt-2 flex items-center justify-between text-sm">
+            <span className="text-marea-muted">{t('checkout.discount')}</span>
+            <span className="price-en font-medium text-marea-gold">−{formatPrice(appliedCoupon.discount)}</span>
+          </div>
+        )}
+        <div className="mt-2 flex items-center justify-between border-t border-marea-border pt-2 text-sm">
+          <span className="font-medium text-marea-cream">{t('orderTracker.total')}</span>
+          <span className="price-en font-medium text-marea-cream">{formatPrice(total)}</span>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-marea-border bg-marea-bg-card p-4">
+        <p className="text-sm text-marea-muted">{t('checkout.coupon')}</p>
+        <div className="mt-2 flex gap-2">
+          <input
+            type="text"
+            value={couponCode}
+            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+            placeholder={t('checkout.couponPlaceholder')}
+            disabled={Boolean(appliedCoupon)}
+            className="flex-1 rounded-lg border border-marea-border bg-marea-bg px-4 py-2.5 text-sm text-marea-cream outline-none focus:border-marea-gold disabled:opacity-60"
+          />
+          {appliedCoupon ? (
+            <button type="button" onClick={removeCoupon} className="btn-secondary shrink-0 px-4 text-sm">
+              {t('checkout.removeCoupon')}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={applyCoupon}
+              disabled={couponLoading || !couponCode.trim()}
+              className="btn-secondary shrink-0 px-4 text-sm disabled:opacity-50"
+            >
+              {couponLoading ? t('common.loading') : t('checkout.applyCoupon')}
+            </button>
+          )}
+        </div>
+        {appliedCoupon && (
+          <p className="mt-2 text-xs text-marea-gold">{t('checkout.couponApplied')}: {appliedCoupon.code}</p>
+        )}
       </div>
 
       <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-marea-border bg-marea-bg-card p-4">

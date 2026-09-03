@@ -247,7 +247,13 @@
     "success": "Order placed! We'll contact you soon.",
     "redirectingLogin": "Redirecting to sign in…",
     "redirectingCart": "Redirecting to cart…",
-    "failed": "Checkout failed"
+    "failed": "Checkout failed",
+    "coupon": "Coupon code",
+    "couponPlaceholder": "Enter code (e.g. LUCKY20-ABC12)",
+    "applyCoupon": "Apply",
+    "couponApplied": "Coupon applied",
+    "discount": "Discount",
+    "removeCoupon": "Remove"
   },
   "auth": {
     "loginTitle": "Welcome Back",
@@ -371,5 +377,24 @@
       "REFUNDED": "Refunded",
       "RETURNED": "Returned"
     }
+  },
+  "wheel": {
+    "label": "Exclusive offer",
+    "title": "Spin & Win",
+    "subtitle": "Try your luck for a special Marea reward — one spin per visitor.",
+    "spin": "Spin the Wheel",
+    "spinning": "Spinning…",
+    "close": "Close wheel",
+    "open": "Open Spin & Win",
+    "floater": "Spin & Win",
+    "congrats": "🎉 Congratulations! You won {{prize}}.",
+    "wonBefore": "Your prize: {{prize}}",
+    "claimPrompt": "Create an account or log in to claim your prize.",
+    "saved": "Your prize has been saved to your account.",
+    "noLuck": "Better luck next time!",
+    "alreadyUsed": "You have already used your Lucky Spin.",
+    "unavailable": "The Lucky Wheel is not available right now.",
+    "loadFailed": "Could not load the Lucky Wheel.",
+    "spinFailed": "Could not complete your spin. Please try again."
   }
 }
