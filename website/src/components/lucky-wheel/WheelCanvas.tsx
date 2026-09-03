@@ -4,6 +4,7 @@ interface WheelCanvasProps {
   prizes: Array<{ id: string; name: string; type?: string }>
   rotation: number
   spinning: boolean
+  preSpinning?: boolean
   spinDurationMs?: number
   highlightIndex?: number | null
 }
@@ -14,8 +15,8 @@ const CY = SIZE / 2
 const OUTER_R = 150
 const INNER_R = 46
 
-export const WHEEL_SPIN_MS = 4500
-export const WHEEL_SPIN_EASING = 'cubic-bezier(0.07, 0.78, 0.05, 1)'
+export const WHEEL_SPIN_MS = 3200
+export const WHEEL_SPIN_EASING = 'cubic-bezier(0.12, 0.72, 0.08, 1)'
 
 function polar(cx: number, cy: number, r: number, deg: number) {
   const rad = ((deg - 90) * Math.PI) / 180
@@ -46,6 +47,7 @@ export default function WheelCanvas({
   prizes,
   rotation,
   spinning,
+  preSpinning = false,
   spinDurationMs = WHEEL_SPIN_MS,
   highlightIndex = null,
 }: WheelCanvasProps) {
@@ -81,10 +83,10 @@ export default function WheelCanvas({
       </div>
 
       <div
-        className={`wheel-spin relative mx-auto aspect-square w-full will-change-transform${spinning ? ' wheel-spin--active' : ''}`}
+        className={`wheel-spin relative mx-auto aspect-square w-full will-change-transform${spinning ? ' wheel-spin--active' : ''}${preSpinning ? ' wheel-spin--pre' : ''}`}
         style={{
           transform: `rotate(${rotation}deg)`,
-          transition: spinning
+          transition: spinning && !preSpinning
             ? `transform ${spinDurationMs}ms ${WHEEL_SPIN_EASING}`
             : 'none',
         }}

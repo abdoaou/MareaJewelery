@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, Copy, Check, Gift, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { api, type WheelPrize, type WheelSpinResult } from '../../services/api'
+import { api, type WheelPrize, type WheelSpinResult, type WheelStatus } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import { useLuckyWheel } from './LuckyWheelProvider'
 import WheelCanvas, { WHEEL_SPIN_MS } from './WheelCanvas'
 
 const POPUP_KEY = 'marea_wheel_popup_seen'
@@ -147,10 +148,11 @@ function ResultPanel({ result, customer, copied, onCopy, onClose }: ResultPanelP
 export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps) {
   const { t } = useTranslation()
   const { customer } = useAuth()
+  const { prizes: cachedPrizes, wheelReady, applyStatus } = useLuckyWheel()
   const [prizes, setPrizes] = useState<WheelPrize[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [spinning, setSpinning] = useState(false)
-  const [processing, setProcessing] = useState(false)
+  const [preSpinning, setPreSpinning] = useState(false)
   const [error, setError] = useState('')
   const [rotation, setRotation] = useState(0)
   const [result, setResult] = useState<WheelSpinResult | null>(null)
@@ -159,9 +161,21 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
   const [showConfetti, setShowConfetti] = useState(false)
   const rotationBase = useRef(0)
   const spinTimer = useRef<number | null>(null)
+  const preSpinTimer = useRef<number | null>(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  const syncStatus = useCallback((status: WheelStatus) => {
+    applyStatus(status)
+    if (status.alreadySpun && status.result) {
+      setAlreadySpun(true)
+      setResult(status.result)
+    } else {
+      setAlreadySpun(false)
+      setResult(null)
+    }
+  }, [applyStatus])
+
+  const load = useCallback(async (opts?: { background?: boolean }) => {
+    if (!opts?.background) setLoading(true)
     setError('')
     try {
       const [prizesRes, statusRes] = await Promise.all([
@@ -169,36 +183,60 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
         api.getWheelStatus({ silent: true }),
       ])
       setPrizes(prizesRes.data)
-      if (statusRes.data.alreadySpun && statusRes.data.result) {
-        setAlreadySpun(true)
-        setResult(statusRes.data.result)
-      } else {
-        setAlreadySpun(false)
-        setResult(null)
-      }
+      syncStatus(statusRes.data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('wheel.loadFailed'))
+      if (!opts?.background) {
+        setError(err instanceof Error ? err.message : t('wheel.loadFailed'))
+      }
     } finally {
       setLoading(false)
     }
-  }, [t])
+  }, [syncStatus, t])
 
   useEffect(() => {
     if (!open) return
-    void load()
+
+    if (cachedPrizes.length > 0) {
+      setPrizes(cachedPrizes)
+      setLoading(false)
+      void api.getWheelStatus({ silent: true }).then((res) => syncStatus(res.data)).catch(() => {})
+    } else if (!wheelReady) {
+      void load()
+    } else {
+      setPrizes(cachedPrizes)
+      setLoading(false)
+    }
+
     return () => {
       if (spinTimer.current) window.clearTimeout(spinTimer.current)
+      if (preSpinTimer.current) window.clearInterval(preSpinTimer.current)
     }
-  }, [open, load])
+  }, [open, cachedPrizes, wheelReady, load, syncStatus])
+
+  const stopPreSpin = useCallback(() => {
+    if (preSpinTimer.current) {
+      window.clearInterval(preSpinTimer.current)
+      preSpinTimer.current = null
+    }
+    setPreSpinning(false)
+  }, [])
+
+  const startPreSpin = useCallback(() => {
+    setPreSpinning(true)
+    preSpinTimer.current = window.setInterval(() => {
+      rotationBase.current += 28
+      setRotation(rotationBase.current)
+    }, 36)
+  }, [])
 
   useEffect(() => {
     if (!open) return
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !spinning && !processing) onClose()
+      if (e.key === 'Escape' && !spinning && !preSpinning) onClose()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [open, onClose, spinning, processing])
+  }, [open, onClose, spinning, preSpinning])
 
   useEffect(() => {
     if (result?.isWinner && !spinning) {
@@ -210,18 +248,19 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
   }, [result, spinning])
 
   async function handleSpin() {
-    if (processing || spinning || alreadySpun || !prizes.length) return
-    setProcessing(true)
+    if (spinning || preSpinning || alreadySpun || !prizes.length) return
     setError('')
+    startPreSpin()
 
     try {
       const res = await api.spinWheel()
       const spinResult = res.data
 
+      stopPreSpin()
+
       if (spinResult.alreadyUsed) {
         setAlreadySpun(true)
         setResult(spinResult)
-        setProcessing(false)
         return
       }
 
@@ -229,20 +268,14 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
 
       const count = prizes.length
       const segmentAngle = 360 / count
-      const extraTurns = 5 * 360
+      const extraTurns = 4 * 360
       const targetOffset = 360 - spinResult.segmentIndex * segmentAngle - segmentAngle / 2
       const target = rotationBase.current + extraTurns + targetOffset
 
       rotationBase.current = target
-      setProcessing(false)
       setSpinning(true)
-
-      // Double rAF so the browser picks up the transition from the current angle
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setRotation(target)
-        })
-      })
+      setRotation(rotationBase.current)
+      requestAnimationFrame(() => setRotation(target))
 
       spinTimer.current = window.setTimeout(() => {
         setSpinning(false)
@@ -251,9 +284,9 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
         if (customer && !spinResult.requiresLogin) {
           localStorage.removeItem(PENDING_SPIN_KEY)
         }
-      }, WHEEL_SPIN_MS + 120)
+      }, WHEEL_SPIN_MS + 80)
     } catch (err) {
-      setProcessing(false)
+      stopPreSpin()
       setError(err instanceof Error ? err.message : t('wheel.spinFailed'))
     }
   }
@@ -265,8 +298,9 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
     window.setTimeout(() => setCopied(false), 2000)
   }
 
-  const canSpin = !loading && !alreadySpun && prizes.length > 0 && !spinning && !processing
-  const highlightIndex = result && !spinning ? result.segmentIndex : null
+  const canSpin = !loading && !alreadySpun && prizes.length > 0 && !spinning && !preSpinning
+  const highlightIndex = result && !spinning && !preSpinning ? result.segmentIndex : null
+  const wheelBusy = spinning || preSpinning
 
   return (
     <AnimatePresence>
@@ -276,7 +310,7 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="wheel-overlay fixed inset-0 z-[70] flex bg-marea-bg/80 backdrop-blur-sm"
-          onClick={!spinning && !processing ? onClose : undefined}
+          onClick={!wheelBusy ? onClose : undefined}
           role="dialog"
           aria-modal="true"
           aria-labelledby="lucky-wheel-title"
@@ -296,7 +330,7 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
             <button
               type="button"
               onClick={onClose}
-              disabled={spinning || processing}
+              disabled={wheelBusy}
               className="absolute end-3 top-3 z-20 rounded-full bg-marea-bg/60 p-2.5 text-marea-muted backdrop-blur-sm transition hover:bg-marea-bg-card hover:text-marea-cream disabled:opacity-40 sm:end-3 sm:top-3 sm:bg-transparent sm:p-2 sm:backdrop-blur-none"
               aria-label={t('wheel.close')}
             >
@@ -314,7 +348,7 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
             </div>
 
             <div className="wheel-modal-panel relative px-3 py-4 sm:px-6 sm:py-5">
-              {loading ? (
+              {loading && !prizes.length ? (
                 <p className="py-14 text-center text-sm text-marea-muted">{t('common.loading')}</p>
               ) : prizes.length === 0 ? (
                 <p className="py-14 text-center text-sm text-marea-muted">{t('wheel.unavailable')}</p>
@@ -325,6 +359,7 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
                       prizes={prizes}
                       rotation={rotation}
                       spinning={spinning}
+                      preSpinning={preSpinning}
                       spinDurationMs={WHEEL_SPIN_MS}
                       highlightIndex={highlightIndex}
                     />
@@ -342,23 +377,12 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
                       </button>
                     )}
 
-                    {(spinning || processing) && (
+                    {(spinning || preSpinning) && (
                       <div className="wheel-center-btn wheel-center-btn--busy absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-2 border-marea-gold/60 bg-marea-bg/95 backdrop-blur-sm">
-                        {processing && !spinning ? (
-                          <>
-                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-marea-gold/30 border-t-marea-gold sm:h-6 sm:w-6" />
-                            <span className="mt-1 text-[0.55rem] tracking-wider text-marea-gold uppercase sm:mt-1.5 sm:text-[0.6rem]">
-                              {t('common.loading')}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <div className="wheel-spin-pulse h-2 w-2 rounded-full bg-marea-gold sm:h-2.5 sm:w-2.5" />
-                            <span className="mt-2 text-[0.55rem] font-medium tracking-wider text-marea-gold uppercase sm:mt-2.5 sm:text-[0.6rem]">
-                              {t('wheel.spinning')}
-                            </span>
-                          </>
-                        )}
+                        <div className="wheel-spin-pulse h-2 w-2 rounded-full bg-marea-gold sm:h-2.5 sm:w-2.5" />
+                        <span className="mt-2 text-[0.55rem] font-medium tracking-wider text-marea-gold uppercase sm:mt-2.5 sm:text-[0.6rem]">
+                          {t('wheel.spinning')}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -369,7 +393,7 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
                     </p>
                   )}
 
-                  {result && !spinning && (
+                  {result && !spinning && !preSpinning && (
                     <ResultPanel
                       result={result}
                       customer={customer}
