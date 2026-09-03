@@ -11,11 +11,14 @@ export default function SpinWinButton({ onClick }: SpinWinButtonProps) {
     <button
       type="button"
       onClick={onClick}
-      className="wheel-floater-pulse fixed bottom-6 end-6 z-[55] flex items-center gap-2 rounded-full border border-marea-gold/60 bg-gradient-to-r from-marea-bg-soft to-marea-bg-card px-4 py-3 text-sm font-medium text-marea-cream backdrop-blur-md transition hover:border-marea-gold hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marea-gold"
+      className="wheel-floater wheel-floater-pulse fixed z-[55] flex items-center gap-1.5 rounded-full border border-marea-gold/60 bg-gradient-to-r from-marea-bg-soft to-marea-bg-card font-medium text-marea-cream backdrop-blur-md transition hover:border-marea-gold hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marea-gold"
       aria-label={t('wheel.open')}
     >
-      <span aria-hidden>🎁</span>
-      {t('wheel.floater')}
+      <span className="text-base sm:text-lg" aria-hidden>
+        🎁
+      </span>
+      <span className="hidden text-xs sm:inline sm:text-sm">{t('wheel.floater')}</span>
+      <span className="text-xs sm:hidden">{t('wheel.floaterShort')}</span>
     </button>
   )
 }

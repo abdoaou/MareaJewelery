@@ -387,6 +387,7 @@
     "close": "Close wheel",
     "open": "Open Spin & Win",
     "floater": "Spin & Win",
+    "floaterShort": "Spin",
     "youWon": "You won",
     "congrats": "🎉 Congratulations! You won {{prize}}.",
     "wonBefore": "Your prize: {{prize}}",

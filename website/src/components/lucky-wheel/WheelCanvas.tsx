@@ -62,12 +62,11 @@ export default function WheelCanvas({
   )
 
   return (
-    <div className="wheel-stage mx-auto w-full max-w-[min(100%,320px)]">
+    <div className="wheel-stage mx-auto">
       <div className="wheel-glow pointer-events-none absolute inset-0 rounded-full" aria-hidden />
 
-      {/* Pointer */}
-      <div className="pointer-events-none absolute left-1/2 top-[-2px] z-30 -translate-x-1/2" aria-hidden>
-        <svg width="28" height="36" viewBox="0 0 28 36" className="drop-shadow-[0_3px_10px_rgba(201,169,98,0.5)]">
+      <div className="wheel-pointer pointer-events-none absolute left-1/2 z-30 -translate-x-1/2" aria-hidden>
+        <svg viewBox="0 0 28 36" className="h-auto w-full drop-shadow-[0_3px_10px_rgba(201,169,98,0.5)]">
           <defs>
             <linearGradient id="wheelPointerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor="#f0e0b8" />
@@ -87,7 +86,7 @@ export default function WheelCanvas({
             : 'none',
         }}
       >
-        <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-full w-full" role="img" aria-label="Lucky wheel">
+        <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="wheel-svg h-full w-full" role="img" aria-label="Lucky wheel">
           <defs>
             <linearGradient id="wheelGoldSeg" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#f0e0b8" />
@@ -105,7 +104,6 @@ export default function WheelCanvas({
             </linearGradient>
           </defs>
 
-          {/* Outer frame */}
           <circle cx={CX} cy={CY} r={OUTER_R + 8} fill="#0c0b0a" />
           <circle cx={CX} cy={CY} r={OUTER_R + 8} fill="none" stroke="url(#wheelGoldSeg)" strokeWidth="2.5" />
           <circle cx={CX} cy={CY} r={OUTER_R + 4} fill="none" stroke="#e8d5a3" strokeWidth="0.5" opacity="0.4" />
@@ -151,14 +149,8 @@ export default function WheelCanvas({
               textAnchor="middle"
               dominantBaseline="middle"
               transform={`rotate(${mid}, ${labelPos.x}, ${labelPos.y})`}
-              className="select-none"
-              style={{
-                fontFamily: '"Cormorant Garamond", Georgia, serif',
-                fontSize: count > 6 ? 12 : 13,
-                fontWeight: highlightIndex === i ? 700 : 600,
-                letterSpacing: '0.06em',
-                fill: highlightIndex === i ? '#1a1208' : isGold ? '#1a1208' : '#f8f4eb',
-              }}
+              className={`wheel-segment-label select-none ${highlightIndex === i ? 'wheel-segment-label--win' : ''}`}
+              fill={highlightIndex === i ? '#1a1208' : isGold ? '#1a1208' : '#f8f4eb'}
             >
               {shortLabel(prize.name)}
             </text>
@@ -166,11 +158,7 @@ export default function WheelCanvas({
         </svg>
       </div>
 
-      {/* Center ring (decorative — spin button overlays in modal) */}
-      <div
-        className="pointer-events-none absolute left-1/2 top-1/2 z-10 h-[5.5rem] w-[5.5rem] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-marea-gold/80 bg-marea-bg shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
-        aria-hidden
-      />
+      <div className="wheel-center-ring pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-marea-gold/80 bg-marea-bg shadow-[0_4px_20px_rgba(0,0,0,0.5)]" aria-hidden />
     </div>
   )
 }

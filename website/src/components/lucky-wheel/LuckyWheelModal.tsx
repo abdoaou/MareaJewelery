@@ -72,7 +72,7 @@ function ResultPanel({ result, customer, copied, onCopy, onClose }: ResultPanelP
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="wheel-result-card mt-5 text-center"
+        className="wheel-result-card mt-4 text-center sm:mt-5"
       >
         <p className="font-serif text-xl text-marea-cream">{t('wheel.noLuck')}</p>
         <p className="mt-2 text-sm text-marea-muted">{t('wheel.noLuckHint')}</p>
@@ -85,17 +85,17 @@ function ResultPanel({ result, customer, copied, onCopy, onClose }: ResultPanelP
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="mt-5 space-y-4"
+      className="mt-4 space-y-3 sm:mt-5 sm:space-y-4"
     >
       {/* Step 1: Prize reveal */}
       <div className="wheel-result-card relative overflow-hidden text-center">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-marea-gold/10 to-transparent" />
-        <div className="relative px-4 py-5">
-          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full border border-marea-gold/40 bg-marea-gold/15">
-            <Gift className="text-marea-gold" size={20} />
+        <div className="relative px-3 py-4 sm:px-5 sm:py-5">
+          <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-marea-gold/40 bg-marea-gold/15 sm:mb-3 sm:h-11 sm:w-11">
+            <Gift className="text-marea-gold" size={18} />
           </div>
           <p className="section-label text-marea-gold">{t('wheel.youWon')}</p>
-          <p className="mt-1 font-serif text-3xl tracking-wide text-marea-cream sm:text-4xl">
+          <p className="mt-1 font-serif text-2xl tracking-wide text-marea-cream sm:text-3xl md:text-4xl">
             {prizeHeadline(result.prize)}
           </p>
           {prizeSubline(result.prize) && (
@@ -110,11 +110,11 @@ function ResultPanel({ result, customer, copied, onCopy, onClose }: ResultPanelP
           <Sparkles className="mx-auto mb-2 text-marea-gold" size={18} />
           <p className="font-medium text-marea-cream">{t('wheel.claimTitle')}</p>
           <p className="mt-1.5 text-sm leading-relaxed text-marea-muted">{t('wheel.claimPrompt')}</p>
-          <div className="mt-4 flex flex-wrap justify-center gap-3">
-            <Link to="/login" className="btn-primary min-w-[120px] px-5 py-2.5 text-sm" onClick={onClose}>
+          <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3">
+            <Link to="/login" className="btn-primary w-full px-5 py-2.5 text-sm sm:min-w-[120px] sm:w-auto" onClick={onClose}>
               {t('nav.login')}
             </Link>
-            <Link to="/register" className="btn-secondary min-w-[120px] px-5 py-2.5 text-sm" onClick={onClose}>
+            <Link to="/register" className="btn-secondary w-full px-5 py-2.5 text-sm sm:min-w-[120px] sm:w-auto" onClick={onClose}>
               {t('nav.register')}
             </Link>
           </div>
@@ -127,11 +127,11 @@ function ResultPanel({ result, customer, copied, onCopy, onClose }: ResultPanelP
           {showCoupon && (
             <div className="mt-3">
               <p className="mb-2 text-xs tracking-wide text-marea-gold uppercase">{t('wheel.yourCode')}</p>
-              <div className="flex items-center justify-center gap-2">
-                <code className="rounded-lg border border-marea-gold/50 bg-marea-bg px-4 py-2.5 font-mono text-sm tracking-wider text-marea-cream">
+              <div className="mt-3 flex max-w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-center">
+                <code className="wheel-coupon-code rounded-lg border border-marea-gold/50 bg-marea-bg px-3 py-2.5 font-mono text-xs tracking-wider text-marea-cream sm:px-4 sm:text-sm">
                   {result.couponCode}
                 </code>
-                <button type="button" onClick={onCopy} className="btn-secondary px-3 py-2.5" aria-label="Copy code">
+                <button type="button" onClick={onCopy} className="btn-secondary shrink-0 self-center px-3 py-2.5 sm:self-auto" aria-label="Copy code">
                   {copied ? <Check size={16} /> : <Copy size={16} />}
                 </button>
               </div>
@@ -268,7 +268,7 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-marea-bg/80 px-4 py-6 backdrop-blur-sm"
+          className="wheel-overlay fixed inset-0 z-[70] flex bg-marea-bg/80 backdrop-blur-sm"
           onClick={!spinning && !processing ? onClose : undefined}
           role="dialog"
           aria-modal="true"
@@ -279,7 +279,7 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 10 }}
             transition={{ duration: 0.22 }}
-            className="relative w-full max-w-[400px] overflow-hidden rounded-2xl border border-marea-gold/20 bg-marea-bg-soft shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
+            className="wheel-modal-shell relative w-full overflow-hidden border border-marea-gold/20 bg-marea-bg-soft shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
             onClick={(e) => e.stopPropagation()}
           >
             {showConfetti && <Confetti />}
@@ -294,17 +294,17 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
               <X size={18} />
             </button>
 
-            <div className="border-b border-marea-gold/10 px-5 pb-4 pt-6 text-center">
+            <div className="border-b border-marea-gold/10 px-4 pb-3 pt-5 text-center sm:px-6 sm:pb-4 sm:pt-6">
               <p className="section-label text-marea-gold">{t('wheel.label')}</p>
-              <h2 id="lucky-wheel-title" className="mt-0.5 font-serif text-2xl text-marea-cream">
+              <h2 id="lucky-wheel-title" className="mt-0.5 font-serif text-xl text-marea-cream sm:text-2xl md:text-3xl">
                 {t('wheel.title')}
               </h2>
               {!result && !spinning && (
-                <p className="mx-auto mt-1.5 max-w-[260px] text-xs text-marea-muted">{t('wheel.subtitle')}</p>
+                <p className="mx-auto mt-1.5 max-w-[280px] text-xs text-marea-muted sm:max-w-xs">{t('wheel.subtitle')}</p>
               )}
             </div>
 
-            <div className="wheel-modal-panel relative px-4 py-5 sm:px-6">
+            <div className="wheel-modal-panel relative px-3 py-4 sm:px-6 sm:py-5">
               {loading ? (
                 <p className="py-14 text-center text-sm text-marea-muted">{t('common.loading')}</p>
               ) : prizes.length === 0 ? (
@@ -325,18 +325,18 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
                       <button
                         type="button"
                         onClick={handleSpin}
-                        className="absolute left-1/2 top-1/2 z-20 flex h-[5.5rem] w-[5.5rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-2 border-marea-gold bg-gradient-to-br from-marea-gold via-[#b8944f] to-[#9a7b3c] text-marea-bg shadow-[0_4px_20px_rgba(201,169,98,0.45)] transition hover:scale-105 hover:brightness-110 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marea-gold"
+                        className="wheel-center-btn absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-2 border-marea-gold bg-gradient-to-br from-marea-gold via-[#b8944f] to-[#9a7b3c] text-marea-bg shadow-[0_4px_20px_rgba(201,169,98,0.45)] transition hover:scale-105 hover:brightness-110 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marea-gold"
                         aria-label={t('wheel.spin')}
                       >
-                        <span className="text-[0.65rem] font-semibold tracking-[0.2em] uppercase">Spin</span>
-                        <span className="font-serif text-lg leading-tight">GO</span>
+                        <span className="text-[0.55rem] font-semibold tracking-[0.18em] uppercase sm:text-[0.65rem]">Spin</span>
+                        <span className="font-serif text-base leading-tight sm:text-lg">GO</span>
                       </button>
                     )}
 
                     {(spinning || processing) && (
-                      <div className="absolute left-1/2 top-1/2 z-20 flex h-[5.5rem] w-[5.5rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-2 border-marea-gold/60 bg-marea-bg/90">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-marea-gold/30 border-t-marea-gold" />
-                        <span className="mt-1.5 text-[0.6rem] tracking-wider text-marea-gold uppercase">
+                      <div className="wheel-center-btn absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-2 border-marea-gold/60 bg-marea-bg/90">
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-marea-gold/30 border-t-marea-gold sm:h-6 sm:w-6" />
+                        <span className="mt-1 text-[0.55rem] tracking-wider text-marea-gold uppercase sm:mt-1.5 sm:text-[0.6rem]">
                           {t('wheel.spinning')}
                         </span>
                       </div>

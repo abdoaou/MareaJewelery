@@ -327,11 +327,154 @@ body {
   }
 }
 
-/* Lucky Wheel */
+/* Lucky Wheel — responsive: phone / tablet / desktop */
+.wheel-overlay {
+  align-items: flex-end;
+  justify-content: center;
+  padding:
+    max(0.5rem, env(safe-area-inset-top, 0px))
+    max(0.5rem, env(safe-area-inset-right, 0px))
+    max(0.5rem, env(safe-area-inset-bottom, 0px))
+    max(0.5rem, env(safe-area-inset-left, 0px));
+}
+
+@media (min-width: 640px) {
+  .wheel-overlay {
+    align-items: center;
+    padding:
+      max(1rem, env(safe-area-inset-top, 0px))
+      max(1rem, env(safe-area-inset-right, 0px))
+      max(1rem, env(safe-area-inset-bottom, 0px))
+      max(1rem, env(safe-area-inset-left, 0px));
+  }
+}
+
+.wheel-modal-shell {
+  max-height: min(96dvh, 900px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 1.25rem 1.25rem 0 0;
+  max-width: 100%;
+}
+
+@media (min-width: 640px) {
+  .wheel-modal-shell {
+    border-radius: 1rem;
+    max-width: min(420px, 92vw);
+  }
+}
+
+@media (min-width: 768px) {
+  .wheel-modal-shell {
+    max-width: min(460px, 88vw);
+  }
+}
+
+@media (min-width: 1024px) {
+  .wheel-modal-shell {
+    max-width: 480px;
+  }
+}
+
 .wheel-stage {
   position: relative;
-  padding-top: 14px;
+  width: min(88vw, 268px);
+  max-width: 100%;
+  margin-inline: auto;
+  padding-top: 12px;
   aspect-ratio: 1;
+}
+
+@media (min-width: 640px) {
+  .wheel-stage {
+    width: min(72vw, 300px);
+    padding-top: 14px;
+  }
+}
+
+@media (min-width: 768px) {
+  .wheel-stage {
+    width: min(340px, 52vw);
+  }
+}
+
+@media (min-width: 1024px) {
+  .wheel-stage {
+    width: 360px;
+  }
+}
+
+.wheel-pointer {
+  top: -1px;
+  width: clamp(1.35rem, 4.5vw, 1.75rem);
+}
+
+.wheel-center-btn,
+.wheel-center-ring {
+  width: clamp(4rem, 17vw, 5.75rem);
+  height: clamp(4rem, 17vw, 5.75rem);
+}
+
+.wheel-svg {
+  font-size: 9px;
+}
+
+@media (min-width: 640px) {
+  .wheel-svg {
+    font-size: 10.5px;
+  }
+}
+
+@media (min-width: 768px) {
+  .wheel-svg {
+    font-size: 11.5px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .wheel-svg {
+    font-size: 12px;
+  }
+}
+
+.wheel-segment-label {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.wheel-segment-label--win {
+  font-weight: 700;
+}
+
+.wheel-coupon-code {
+  word-break: break-all;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .wheel-coupon-code {
+    word-break: normal;
+  }
+}
+
+.wheel-floater {
+  bottom: max(0.875rem, env(safe-area-inset-bottom, 0px));
+  inset-inline-end: max(0.875rem, env(safe-area-inset-right, 0px));
+  padding: 0.625rem 0.875rem;
+  font-size: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .wheel-floater {
+    bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+    inset-inline-end: max(1.25rem, env(safe-area-inset-right, 0px));
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
 }
 
 .wheel-glow {
@@ -361,7 +504,13 @@ body {
   border-radius: 1rem;
   border: 1px solid var(--color-marea-border, rgba(201, 169, 98, 0.15));
   background: color-mix(in srgb, var(--color-marea-bg-card) 90%, transparent);
-  padding: 1.25rem 1rem;
+  padding: 1rem 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .wheel-claim-card {
+    padding: 1.25rem 1rem;
+  }
 }
 
 .wheel-floater-pulse {

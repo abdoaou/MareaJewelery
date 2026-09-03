@@ -387,6 +387,7 @@
     "close": "إغلاق العجلة",
     "open": "فتح لف واربح",
     "floater": "لف واربح",
+    "floaterShort": "لف",
     "youWon": "لقد ربحتِ",
     "congrats": "🎉 مبروك! ربحتِ {{prize}}.",
     "wonBefore": "جائزتك: {{prize}}",
