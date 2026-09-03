@@ -1,16 +1,18 @@
 import { useMemo } from 'react'
 
 interface WheelCanvasProps {
-  prizes: Array<{ id: string; name: string }>
+  prizes: Array<{ id: string; name: string; type?: string }>
   rotation: number
   spinning: boolean
+  spinDurationMs?: number
+  highlightIndex?: number | null
 }
 
 const SIZE = 340
 const CX = SIZE / 2
 const CY = SIZE / 2
-const OUTER_R = 148
-const INNER_R = 44
+const OUTER_R = 150
+const INNER_R = 46
 
 function polar(cx: number, cy: number, r: number, deg: number) {
   const rad = ((deg - 90) * Math.PI) / 180
@@ -31,13 +33,19 @@ function annularSegment(index: number, total: number) {
 function shortLabel(name: string) {
   if (/better luck/i.test(name)) return 'Try Again'
   if (/free shipping/i.test(name)) return 'Free Ship'
-  if (/free gift/i.test(name)) return 'Free Gift'
+  if (/free gift/i.test(name)) return 'Gift'
   const pct = name.match(/(\d+)\s*%/)
-  if (pct) return `${pct[1]}% OFF`
-  return name.length > 12 ? `${name.slice(0, 11)}…` : name
+  if (pct) return `${pct[1]}%`
+  return name.length > 10 ? `${name.slice(0, 9)}…` : name
 }
 
-export default function WheelCanvas({ prizes, rotation, spinning }: WheelCanvasProps) {
+export default function WheelCanvas({
+  prizes,
+  rotation,
+  spinning,
+  spinDurationMs = 2400,
+  highlightIndex = null,
+}: WheelCanvasProps) {
   const count = Math.max(prizes.length, 1)
   const segmentAngle = 360 / count
   const labelR = (OUTER_R + INNER_R) / 2
@@ -48,30 +56,25 @@ export default function WheelCanvas({ prizes, rotation, spinning }: WheelCanvasP
         const mid = i * segmentAngle + segmentAngle / 2
         const labelPos = polar(CX, CY, labelR, mid)
         const isGold = i % 2 === 0
-        return { prize, mid, labelPos, isGold, path: annularSegment(i, count) }
+        return { prize, i, mid, labelPos, isGold, path: annularSegment(i, count) }
       }),
     [prizes, count, segmentAngle],
   )
 
   return (
-    <div className="wheel-stage mx-auto w-full max-w-[min(100%,340px)]">
+    <div className="wheel-stage mx-auto w-full max-w-[min(100%,320px)]">
       <div className="wheel-glow pointer-events-none absolute inset-0 rounded-full" aria-hidden />
 
-      <div className="pointer-events-none absolute left-1/2 top-0 z-30 -translate-x-1/2" aria-hidden>
-        <svg width="36" height="44" viewBox="0 0 36 44" className="drop-shadow-[0_4px_12px_rgba(201,169,98,0.55)]">
+      {/* Pointer */}
+      <div className="pointer-events-none absolute left-1/2 top-[-2px] z-30 -translate-x-1/2" aria-hidden>
+        <svg width="28" height="36" viewBox="0 0 28 36" className="drop-shadow-[0_3px_10px_rgba(201,169,98,0.5)]">
           <defs>
             <linearGradient id="wheelPointerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#e8d5a3" />
-              <stop offset="45%" stopColor="#c9a962" />
+              <stop offset="0%" stopColor="#f0e0b8" />
               <stop offset="100%" stopColor="#9a7b3c" />
             </linearGradient>
           </defs>
-          <path
-            d="M18 2 L32 38 Q18 32 4 38 Z"
-            fill="url(#wheelPointerGrad)"
-            stroke="#e8d5a3"
-            strokeWidth="1.2"
-          />
+          <path d="M14 0 L26 32 Q14 28 2 32 Z" fill="url(#wheelPointerGrad)" stroke="#e8d5a3" strokeWidth="1" />
         </svg>
       </div>
 
@@ -79,65 +82,48 @@ export default function WheelCanvas({ prizes, rotation, spinning }: WheelCanvasP
         className="wheel-spin relative mx-auto aspect-square w-full will-change-transform"
         style={{
           transform: `rotate(${rotation}deg)`,
-          transition: spinning ? 'transform 4.8s cubic-bezier(0.12, 0.75, 0.08, 1)' : 'none',
+          transition: spinning
+            ? `transform ${spinDurationMs}ms cubic-bezier(0.2, 0.85, 0.25, 1)`
+            : 'none',
         }}
       >
-        <svg
-          viewBox={`0 0 ${SIZE} ${SIZE}`}
-          className="h-full w-full drop-shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
-          role="img"
-          aria-label="Lucky wheel"
-        >
+        <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-full w-full" role="img" aria-label="Lucky wheel">
           <defs>
             <linearGradient id="wheelGoldSeg" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#e8d5a3" />
-              <stop offset="40%" stopColor="#c9a962" />
-              <stop offset="100%" stopColor="#9a7b3c" />
+              <stop offset="0%" stopColor="#f0e0b8" />
+              <stop offset="50%" stopColor="#c9a962" />
+              <stop offset="100%" stopColor="#a8893d" />
             </linearGradient>
             <linearGradient id="wheelDarkSeg" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#2a2620" />
-              <stop offset="50%" stopColor="#1a1816" />
-              <stop offset="100%" stopColor="#0f0e0c" />
+              <stop offset="0%" stopColor="#242018" />
+              <stop offset="100%" stopColor="#121010" />
             </linearGradient>
-            <radialGradient id="wheelRimGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="78%" stopColor="transparent" />
-              <stop offset="92%" stopColor="#c9a962" stopOpacity="0.28" />
-              <stop offset="100%" stopColor="#e8d5a3" stopOpacity="0.45" />
-            </radialGradient>
-            <filter id="wheelSegShadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#000" floodOpacity="0.35" />
-            </filter>
+            <linearGradient id="wheelWinGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#fff8e7" />
+              <stop offset="50%" stopColor="#e8d5a3" />
+              <stop offset="100%" stopColor="#c9a962" />
+            </linearGradient>
           </defs>
 
-          <circle cx={CX} cy={CY} r={OUTER_R + 6} fill="none" stroke="url(#wheelGoldSeg)" strokeWidth="5" />
-          <circle cx={CX} cy={CY} r={OUTER_R + 2} fill="none" stroke="#0c0b0a" strokeWidth="1.5" opacity="0.45" />
+          {/* Outer frame */}
+          <circle cx={CX} cy={CY} r={OUTER_R + 8} fill="#0c0b0a" />
+          <circle cx={CX} cy={CY} r={OUTER_R + 8} fill="none" stroke="url(#wheelGoldSeg)" strokeWidth="2.5" />
+          <circle cx={CX} cy={CY} r={OUTER_R + 4} fill="none" stroke="#e8d5a3" strokeWidth="0.5" opacity="0.4" />
 
-          {Array.from({ length: 24 }, (_, d) => {
-            const p = polar(CX, CY, OUTER_R + 6, (360 / 24) * d)
+          {segments.map(({ prize, i, path, isGold }) => {
+            const isWinner = highlightIndex === i
             return (
-              <circle
-                key={d}
-                cx={p.x}
-                cy={p.y}
-                r={d % 3 === 0 ? 2.2 : 1.2}
-                fill={d % 2 === 0 ? '#e8d5a3' : '#9a7b3c'}
-                opacity={d % 3 === 0 ? 0.95 : 0.55}
-              />
-            )
-          })}
-
-          <g filter="url(#wheelSegShadow)">
-            {segments.map(({ prize, path, isGold }) => (
               <path
                 key={prize.id}
                 d={path}
-                fill={isGold ? 'url(#wheelGoldSeg)' : 'url(#wheelDarkSeg)'}
-                stroke="#e8d5a3"
-                strokeWidth="0.75"
-                strokeOpacity="0.4"
+                fill={isWinner ? 'url(#wheelWinGlow)' : isGold ? 'url(#wheelGoldSeg)' : 'url(#wheelDarkSeg)'}
+                stroke={isWinner ? '#fff8e7' : '#e8d5a3'}
+                strokeWidth={isWinner ? 1.2 : 0.5}
+                strokeOpacity={isWinner ? 0.9 : 0.25}
+                style={isWinner ? { filter: 'drop-shadow(0 0 8px rgba(201,169,98,0.6))' } : undefined}
               />
-            ))}
-          </g>
+            )
+          })}
 
           {prizes.map((_, i) => {
             const a = i * segmentAngle
@@ -151,15 +137,13 @@ export default function WheelCanvas({ prizes, rotation, spinning }: WheelCanvasP
                 x2={p2.x}
                 y2={p2.y}
                 stroke="#e8d5a3"
-                strokeWidth="0.65"
-                strokeOpacity="0.35"
+                strokeWidth="0.5"
+                strokeOpacity="0.3"
               />
             )
           })}
 
-          <circle cx={CX} cy={CY} r={OUTER_R} fill="url(#wheelRimGlow)" pointerEvents="none" />
-
-          {segments.map(({ prize, mid, labelPos, isGold }) => (
+          {segments.map(({ prize, mid, labelPos, isGold, i }) => (
             <text
               key={`label-${prize.id}`}
               x={labelPos.x}
@@ -170,10 +154,10 @@ export default function WheelCanvas({ prizes, rotation, spinning }: WheelCanvasP
               className="select-none"
               style={{
                 fontFamily: '"Cormorant Garamond", Georgia, serif',
-                fontSize: count > 6 ? 11 : 12.5,
-                fontWeight: 600,
-                letterSpacing: '0.05em',
-                fill: isGold ? '#1a1208' : '#f5efe3',
+                fontSize: count > 6 ? 12 : 13,
+                fontWeight: highlightIndex === i ? 700 : 600,
+                letterSpacing: '0.06em',
+                fill: highlightIndex === i ? '#1a1208' : isGold ? '#1a1208' : '#f8f4eb',
               }}
             >
               {shortLabel(prize.name)}
@@ -182,13 +166,13 @@ export default function WheelCanvas({ prizes, rotation, spinning }: WheelCanvasP
         </svg>
       </div>
 
+      {/* Center ring (decorative — spin button overlays in modal) */}
       <div
-        className="pointer-events-none absolute left-1/2 top-1/2 z-20 flex h-[5.25rem] w-[5.25rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-[3px] border-marea-gold bg-gradient-to-br from-marea-bg-card via-marea-bg-soft to-marea-bg shadow-[inset_0_2px_10px_rgba(201,169,98,0.2),0_6px_20px_rgba(0,0,0,0.45)]"
+        className="pointer-events-none absolute left-1/2 top-1/2 z-10 h-[5.5rem] w-[5.5rem] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-marea-gold/80 bg-marea-bg shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
         aria-hidden
-      >
-        <span className="font-serif text-[1.65rem] leading-none text-marea-gold">✦</span>
-        <span className="mt-0.5 text-[0.55rem] tracking-[0.25em] text-marea-gold/80 uppercase">Marea</span>
-      </div>
+      />
     </div>
   )
 }
+
+export const WHEEL_SPIN_MS = 2400
