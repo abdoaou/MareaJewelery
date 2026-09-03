@@ -14,6 +14,9 @@ const CY = SIZE / 2
 const OUTER_R = 150
 const INNER_R = 46
 
+export const WHEEL_SPIN_MS = 4500
+export const WHEEL_SPIN_EASING = 'cubic-bezier(0.07, 0.78, 0.05, 1)'
+
 function polar(cx: number, cy: number, r: number, deg: number) {
   const rad = ((deg - 90) * Math.PI) / 180
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
@@ -43,7 +46,7 @@ export default function WheelCanvas({
   prizes,
   rotation,
   spinning,
-  spinDurationMs = 2400,
+  spinDurationMs = WHEEL_SPIN_MS,
   highlightIndex = null,
 }: WheelCanvasProps) {
   const count = Math.max(prizes.length, 1)
@@ -78,11 +81,11 @@ export default function WheelCanvas({
       </div>
 
       <div
-        className="wheel-spin relative mx-auto aspect-square w-full will-change-transform"
+        className={`wheel-spin relative mx-auto aspect-square w-full will-change-transform${spinning ? ' wheel-spin--active' : ''}`}
         style={{
           transform: `rotate(${rotation}deg)`,
           transition: spinning
-            ? `transform ${spinDurationMs}ms cubic-bezier(0.2, 0.85, 0.25, 1)`
+            ? `transform ${spinDurationMs}ms ${WHEEL_SPIN_EASING}`
             : 'none',
         }}
       >
@@ -163,4 +166,3 @@ export default function WheelCanvas({
   )
 }
 
-export const WHEEL_SPIN_MS = 2400

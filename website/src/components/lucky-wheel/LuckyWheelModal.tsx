@@ -221,6 +221,7 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
       if (spinResult.alreadyUsed) {
         setAlreadySpun(true)
         setResult(spinResult)
+        setProcessing(false)
         return
       }
 
@@ -228,13 +229,20 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
 
       const count = prizes.length
       const segmentAngle = 360 / count
-      const extraTurns = 3 * 360
+      const extraTurns = 5 * 360
       const targetOffset = 360 - spinResult.segmentIndex * segmentAngle - segmentAngle / 2
       const target = rotationBase.current + extraTurns + targetOffset
 
       rotationBase.current = target
+      setProcessing(false)
       setSpinning(true)
-      setRotation(target)
+
+      // Double rAF so the browser picks up the transition from the current angle
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setRotation(target)
+        })
+      })
 
       spinTimer.current = window.setTimeout(() => {
         setSpinning(false)
@@ -243,11 +251,10 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
         if (customer && !spinResult.requiresLogin) {
           localStorage.removeItem(PENDING_SPIN_KEY)
         }
-      }, WHEEL_SPIN_MS + 80)
+      }, WHEEL_SPIN_MS + 120)
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('wheel.spinFailed'))
-    } finally {
       setProcessing(false)
+      setError(err instanceof Error ? err.message : t('wheel.spinFailed'))
     }
   }
 
@@ -275,26 +282,28 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
           aria-labelledby="lucky-wheel-title"
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.97, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: 10 }}
-            transition={{ duration: 0.22 }}
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 28 }}
+            transition={{ type: 'spring', damping: 30, stiffness: 320 }}
             className="wheel-modal-shell relative w-full overflow-hidden border border-marea-gold/20 bg-marea-bg-soft shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
             onClick={(e) => e.stopPropagation()}
           >
             {showConfetti && <Confetti />}
 
+            <div className="wheel-sheet-handle sm:hidden" aria-hidden />
+
             <button
               type="button"
               onClick={onClose}
               disabled={spinning || processing}
-              className="absolute end-3 top-3 z-20 rounded-full p-2 text-marea-muted transition hover:bg-marea-bg-card hover:text-marea-cream disabled:opacity-40"
+              className="absolute end-3 top-3 z-20 rounded-full bg-marea-bg/60 p-2.5 text-marea-muted backdrop-blur-sm transition hover:bg-marea-bg-card hover:text-marea-cream disabled:opacity-40 sm:end-3 sm:top-3 sm:bg-transparent sm:p-2 sm:backdrop-blur-none"
               aria-label={t('wheel.close')}
             >
               <X size={18} />
             </button>
 
-            <div className="border-b border-marea-gold/10 px-4 pb-3 pt-5 text-center sm:px-6 sm:pb-4 sm:pt-6">
+            <div className="wheel-modal-header border-b border-marea-gold/15 px-4 pb-3 pt-2 text-center sm:px-6 sm:pb-4 sm:pt-6">
               <p className="section-label text-marea-gold">{t('wheel.label')}</p>
               <h2 id="lucky-wheel-title" className="mt-0.5 font-serif text-xl text-marea-cream sm:text-2xl md:text-3xl">
                 {t('wheel.title')}
@@ -311,7 +320,7 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
                 <p className="py-14 text-center text-sm text-marea-muted">{t('wheel.unavailable')}</p>
               ) : (
                 <>
-                  <div className="relative">
+                  <div className="wheel-stage-wrap relative">
                     <WheelCanvas
                       prizes={prizes}
                       rotation={rotation}
@@ -334,11 +343,22 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
                     )}
 
                     {(spinning || processing) && (
-                      <div className="wheel-center-btn absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-2 border-marea-gold/60 bg-marea-bg/90">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-marea-gold/30 border-t-marea-gold sm:h-6 sm:w-6" />
-                        <span className="mt-1 text-[0.55rem] tracking-wider text-marea-gold uppercase sm:mt-1.5 sm:text-[0.6rem]">
-                          {t('wheel.spinning')}
-                        </span>
+                      <div className="wheel-center-btn wheel-center-btn--busy absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-2 border-marea-gold/60 bg-marea-bg/95 backdrop-blur-sm">
+                        {processing && !spinning ? (
+                          <>
+                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-marea-gold/30 border-t-marea-gold sm:h-6 sm:w-6" />
+                            <span className="mt-1 text-[0.55rem] tracking-wider text-marea-gold uppercase sm:mt-1.5 sm:text-[0.6rem]">
+                              {t('common.loading')}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <div className="wheel-spin-pulse h-2 w-2 rounded-full bg-marea-gold sm:h-2.5 sm:w-2.5" />
+                            <span className="mt-2 text-[0.55rem] font-medium tracking-wider text-marea-gold uppercase sm:mt-2.5 sm:text-[0.6rem]">
+                              {t('wheel.spinning')}
+                            </span>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
