@@ -24,7 +24,10 @@ function Confetti() {
       {pieces.map((i) => (
         <motion.span
           key={i}
-          className="absolute h-2 w-2 rounded-sm bg-marea-gold"
+          className="absolute h-2 w-2 rounded-sm"
+          style={{
+            backgroundColor: i % 3 === 0 ? '#e8d5a3' : i % 3 === 1 ? '#c9a962' : '#f5efe3',
+          }}
           initial={{
             opacity: 1,
             x: '50%',
@@ -172,7 +175,7 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ duration: 0.25 }}
-            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-marea-border bg-marea-bg-soft shadow-2xl"
+            className="relative w-full max-w-[420px] overflow-hidden rounded-2xl border border-marea-gold/25 bg-marea-bg-soft shadow-[0_24px_80px_rgba(0,0,0,0.55),0_0_0_1px_rgba(201,169,98,0.08)]"
             onClick={(e) => e.stopPropagation()}
           >
             {showConfetti && <Confetti />}
@@ -187,15 +190,15 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
               <X size={18} />
             </button>
 
-            <div className="border-b border-marea-border px-6 pb-4 pt-6 text-center">
-              <p className="section-label">{t('wheel.label')}</p>
-              <h2 id="lucky-wheel-title" className="mt-1 font-serif text-2xl text-marea-cream">
+            <div className="relative border-b border-marea-gold/15 px-6 pb-5 pt-7 text-center">
+              <p className="section-label text-marea-gold">{t('wheel.label')}</p>
+              <h2 id="lucky-wheel-title" className="mt-1 font-serif text-[1.75rem] tracking-wide text-marea-cream sm:text-3xl">
                 {t('wheel.title')}
               </h2>
-              <p className="mt-2 text-sm text-marea-muted">{t('wheel.subtitle')}</p>
+              <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-marea-muted">{t('wheel.subtitle')}</p>
             </div>
 
-            <div className="relative px-6 py-6">
+            <div className="wheel-modal-panel relative px-5 py-7 sm:px-8">
               {loading ? (
                 <p className="py-16 text-center text-marea-muted">{t('common.loading')}</p>
               ) : prizes.length === 0 ? (
@@ -219,7 +222,7 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
                       type="button"
                       onClick={handleSpin}
                       disabled={!canSpin || processing}
-                      className="btn-primary mx-auto mt-6 block min-w-[160px] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="btn-primary mx-auto mt-8 block min-w-[180px] rounded-full px-8 py-3.5 text-sm tracking-wide shadow-[0_4px_24px_rgba(201,169,98,0.35)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {processing ? t('common.loading') : t('wheel.spin')}
                     </button>
