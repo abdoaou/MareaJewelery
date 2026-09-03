@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { api, type WheelPrize, type WheelSpinResult, type WheelStatus } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useLuckyWheel } from './LuckyWheelProvider'
-import WheelCanvas, { WHEEL_SPIN_MS } from './WheelCanvas'
+import WheelCanvas, { WHEEL_SPIN_MS, computeWheelTargetRotation } from './WheelCanvas'
 
 const POPUP_KEY = 'marea_wheel_popup_seen'
 const PENDING_SPIN_KEY = 'marea_wheel_pending_spin_id'
@@ -266,15 +266,15 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
 
       localStorage.setItem(PENDING_SPIN_KEY, spinResult.spinId)
 
-      const count = prizes.length
-      const segmentAngle = 360 / count
-      const extraTurns = 4 * 360
-      const targetOffset = 360 - spinResult.segmentIndex * segmentAngle - segmentAngle / 2
-      const target = rotationBase.current + extraTurns + targetOffset
+      const currentRotation = rotationBase.current
+      const target = computeWheelTargetRotation(
+        currentRotation,
+        spinResult.segmentIndex,
+        prizes.length,
+      )
 
       rotationBase.current = target
       setSpinning(true)
-      setRotation(rotationBase.current)
       requestAnimationFrame(() => setRotation(target))
 
       spinTimer.current = window.setTimeout(() => {

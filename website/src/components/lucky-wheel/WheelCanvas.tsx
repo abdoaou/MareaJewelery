@@ -18,6 +18,20 @@ const INNER_R = 46
 export const WHEEL_SPIN_MS = 3200
 export const WHEEL_SPIN_EASING = 'cubic-bezier(0.12, 0.72, 0.08, 1)'
 
+/** Align segment center with the top pointer from the current wheel angle. */
+export function computeWheelTargetRotation(
+  currentRotation: number,
+  segmentIndex: number,
+  segmentCount: number,
+  extraTurns = 4,
+): number {
+  const segmentAngle = 360 / segmentCount
+  const segmentMid = segmentIndex * segmentAngle + segmentAngle / 2
+  const currentMod = ((currentRotation % 360) + 360) % 360
+  const delta = (360 - segmentMid - currentMod + 360) % 360
+  return currentRotation + extraTurns * 360 + delta
+}
+
 function polar(cx: number, cy: number, r: number, deg: number) {
   const rad = ((deg - 90) * Math.PI) / 180
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
