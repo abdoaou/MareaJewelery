@@ -20,14 +20,15 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
 
   sync: async (opts) => {
     try {
-      const [idsRes, listRes] = await Promise.all([
-        api.getWishlistIds(opts),
-        api.getWishlist(opts),
-      ])
-      set({ likedIds: idsRes.data, items: listRes.data, loaded: true })
+      const listRes = await api.getWishlist(opts)
+      set({
+        likedIds: listRes.data.map((item) => item.productId),
+        items: listRes.data,
+        loaded: true,
+      })
     } catch (err) {
       set({ likedIds: [], items: [], loaded: true })
-      throw err
+      if (!opts?.silent) throw err
     }
   },
 

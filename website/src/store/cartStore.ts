@@ -72,7 +72,7 @@ export const useCartStore = create<CartState>()(
           set({ apiItems: res.data.items })
         } catch (err) {
           set({ apiItems: [] })
-          throw err
+          if (!opts?.silent) throw err
         }
       },
 

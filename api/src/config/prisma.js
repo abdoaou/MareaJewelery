@@ -15,7 +15,11 @@ function resolveDatabaseUrl() {
   try {
     const url = new URL(raw)
     const isSupabasePooler = url.hostname.includes('pooler.supabase.com')
-    const limit = String(process.env.DB_CONNECTION_LIMIT || (isSupabasePooler ? '5' : '10'))
+    const isSessionPooler = isSupabasePooler && url.port === '5432'
+    const limit = String(
+      process.env.DB_CONNECTION_LIMIT ||
+        (isSessionPooler ? '2' : isSupabasePooler ? '5' : '10'),
+    )
 
     if (!url.searchParams.has('connection_limit')) {
       url.searchParams.set('connection_limit', limit)
@@ -48,6 +52,6 @@ export const prisma =
     log: env.nodeEnv === 'development' ? ['error', 'warn'] : ['error'],
   })
 
-if (env.nodeEnv !== 'production') globalForPrisma.prisma = prisma
+globalForPrisma.prisma = prisma
 
 export default prisma

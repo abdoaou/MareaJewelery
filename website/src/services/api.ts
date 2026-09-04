@@ -62,7 +62,11 @@ async function request<T>(
   }
 
   if (!res.ok) {
-    const message = data.message || i18n.t('common.genericError')
+    const raw = data.message || i18n.t('common.genericError')
+    const message =
+      silent && /prisma|max clients|connection pool|too many connections/i.test(String(raw))
+        ? i18n.t('common.genericError')
+        : raw
     if (!silent && !path.startsWith('/auth/')) reportError(message)
     throw new Error(message)
   }
@@ -262,7 +266,15 @@ type ApiOrderRaw = {
 
   subtotal: string | number
 
+  discount?: string | number
+
+  tax?: string | number
+
+  shipping?: string | number
+
   createdAt: string
+
+  promo?: OrderPromo | null
 
   items: Array<{
 
@@ -315,6 +327,14 @@ function mapOrder(order: ApiOrderRaw): Order {
     total: Number(order.total),
 
     subtotal: Number(order.subtotal),
+
+    discount: Number(order.discount || 0),
+
+    tax: Number(order.tax || 0),
+
+    shipping: Number(order.shipping || 0),
+
+    promo: order.promo ?? null,
 
     createdAt: order.createdAt,
 
@@ -609,10 +629,11 @@ export const api = {
   spinWheel: () =>
     request<{ data: WheelSpinResult }>('/wheel/spin', { method: 'POST' }),
 
-  claimWheel: (spinId?: string) =>
+  claimWheel: (spinId?: string, opts?: { silent?: boolean }) =>
     request<{ data: WheelSpinResult }>('/wheel/claim', {
       method: 'POST',
       body: JSON.stringify({ spinId }),
+      silent: opts?.silent,
     }),
 
   validateCoupon: (code: string, subtotal: number, shipping = 0) =>
@@ -873,6 +894,19 @@ export interface OrderStatusStep {
 
 
 
+export interface OrderPromo {
+  kind: 'wheel' | 'coupon'
+  code: string
+  benefit: string
+  prizeType?: string | null
+  prizeName?: string | null
+  discountType?: string
+  discountValue?: number | null
+  discountAmount: number
+  freeShipping?: boolean
+  freeGift?: boolean
+}
+
 export interface Order {
 
   id: string
@@ -888,6 +922,14 @@ export interface Order {
   total: number
 
   subtotal: number
+
+  discount: number
+
+  tax: number
+
+  shipping: number
+
+  promo: OrderPromo | null
 
   createdAt: string
 

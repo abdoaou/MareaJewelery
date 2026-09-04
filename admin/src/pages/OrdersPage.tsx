@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { format } from 'date-fns'
 import { Eye, Search, Plus, Package, Trash2 } from 'lucide-react'
 import { ordersApi, productsApi, customersApi } from '../services/api'
-import type { Order, Product, User, OrderItem } from '../types'
+import type { Order, Product, User, OrderItem, OrderPromo } from '../types'
 import { Badge } from '../components/ui/Badge'
 import { Modal } from '../components/ui/Modal'
 import { EmptyState, Skeleton } from '../components/ui/EmptyState'
@@ -26,6 +26,11 @@ function itemImage(item?: OrderItem) {
 
 function orderPhone(order: Order) {
   return order.shippingAddress?.phone || order.user?.phone || '—'
+}
+
+function promoLabel(promo: OrderPromo) {
+  if (promo.kind === 'wheel') return `Wheel: ${promo.benefit}`
+  return promo.benefit
 }
 
 export function OrdersPage() {
@@ -193,6 +198,7 @@ export function OrdersPage() {
                   <th className="table-th">Customer</th>
                   <th className="table-th">Phone</th>
                   <th className="table-th">Total</th>
+                  <th className="table-th">Promo</th>
                   <th className="table-th">Status</th>
                   <th className="table-th">Date</th>
                   <th className="table-th">Actions</th>
@@ -221,6 +227,15 @@ export function OrdersPage() {
                       <td className="table-td">{o.user?.email || 'Guest'}</td>
                       <td className="table-td font-mono text-xs text-white/70">{orderPhone(o)}</td>
                       <td className="table-td">${Number(o.total).toFixed(2)}</td>
+                      <td className="table-td max-w-[140px]">
+                        {o.promo ? (
+                          <span className="inline-block rounded-full border border-gold/40 bg-gold/10 px-2 py-0.5 text-xs text-gold">
+                            {promoLabel(o.promo)}
+                          </span>
+                        ) : (
+                          <span className="text-white/30">—</span>
+                        )}
+                      </td>
                       <td className="table-td"><Badge status={o.status} /></td>
                       <td className="table-td text-white/50">{format(new Date(o.createdAt), 'MMM d, yyyy HH:mm')}</td>
                       <td className="table-td">
@@ -360,6 +375,54 @@ export function OrdersPage() {
               <div>
                 <p className="text-xs text-white/40">Total</p>
                 <p className="text-lg font-medium text-gold">${Number(selected.total).toFixed(2)}</p>
+              </div>
+            </div>
+
+            {selected.promo && (
+              <div className="rounded-lg border border-gold/30 bg-gold/10 p-4">
+                <p className="text-xs uppercase tracking-wide text-gold">
+                  {selected.promo.kind === 'wheel' ? 'Lucky Wheel prize' : 'Coupon used'}
+                </p>
+                <p className="mt-1 font-medium">{selected.promo.benefit}</p>
+                <p className="mt-1 font-mono text-xs text-white/60">Code: {selected.promo.code}</p>
+                {selected.promo.freeGift && (
+                  <p className="mt-2 text-sm text-white/70">Includes a free gift with this order</p>
+                )}
+                {selected.promo.freeShipping && (
+                  <p className="mt-2 text-sm text-white/70">Free delivery applied</p>
+                )}
+              </div>
+            )}
+
+            <div className="rounded-lg border border-[var(--color-border)] p-4">
+              <p className="mb-3 text-xs text-white/40">Price breakdown</p>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-white/60">Subtotal</span>
+                  <span>${Number(selected.subtotal).toFixed(2)}</span>
+                </div>
+                {Number(selected.discount || 0) > 0 && (
+                  <div className="flex justify-between text-gold">
+                    <span>Discount</span>
+                    <span>−${Number(selected.discount).toFixed(2)}</span>
+                  </div>
+                )}
+                {Number(selected.shipping || 0) > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-white/60">Shipping</span>
+                    <span>${Number(selected.shipping).toFixed(2)}</span>
+                  </div>
+                )}
+                {Number(selected.tax || 0) > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-white/60">Tax</span>
+                    <span>${Number(selected.tax).toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-[var(--color-border)] pt-2 font-medium">
+                  <span>Total paid</span>
+                  <span className="text-gold">${Number(selected.total).toFixed(2)}</span>
+                </div>
               </div>
             </div>
 

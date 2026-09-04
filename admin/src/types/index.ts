@@ -70,6 +70,19 @@ export interface Category {
   _count?: { products: number }
 }
 
+export interface OrderPromo {
+  kind: 'wheel' | 'coupon'
+  code: string
+  benefit: string
+  prizeType?: string | null
+  prizeName?: string | null
+  discountType?: string
+  discountValue?: number | null
+  discountAmount: number
+  freeShipping?: boolean
+  freeGift?: boolean
+}
+
 export interface Order {
   id: string
   orderNumber: string
@@ -78,10 +91,14 @@ export interface Order {
   paymentStatus: string
   total: string | number
   subtotal: string | number
+  discount?: string | number
+  tax?: string | number
+  shipping?: string | number
   createdAt: string
   shippingAddress?: { city?: string; line1?: string; country?: string; phone?: string; name?: string }
   customerNotes?: string
   adminNotes?: string
+  promo?: OrderPromo | null
   user?: { email: string; firstName?: string; lastName?: string; phone?: string }
   items?: OrderItem[]
   statusHistory?: { status: string; note?: string; createdAt: string }[]

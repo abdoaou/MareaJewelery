@@ -15,7 +15,6 @@ export default function VerifyEmailPage() {
   const { completeAuth } = useAuth()
   const addToApi = useCartStore((s) => s.addToApi)
   const toggleLike = useWishlistStore((s) => s.toggle)
-  const syncWishlist = useWishlistStore((s) => s.sync)
   const autoResendDone = useRef(false)
 
   const state = location.state as {
@@ -65,7 +64,6 @@ export default function VerifyEmailPage() {
     try {
       const res = await api.verifyEmail({ email, code })
       completeAuth(res.data)
-      await syncWishlist()
       const afterLike = await processPendingLike(toggleLike)
       if (afterLike) {
         navigate(afterLike)

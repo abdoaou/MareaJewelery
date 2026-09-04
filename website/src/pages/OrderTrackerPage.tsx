@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext'
 import { formatPrice } from '../utils/formatPrice'
 import { statusBadgeClass } from '../utils/orderStatus'
 import LoadingAnimation from '../components/LoadingAnimation'
+import OrderPriceSummary from '../components/OrderPriceSummary'
 
 function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation()
@@ -119,6 +120,8 @@ function OrderDetail({ orderId }: { orderId: string }) {
         </p>
       </div>
 
+      <OrderPriceSummary order={order} />
+
       {order.statusHistory.length > 0 && (
         <div className="mt-8">
           <h2 className="font-serif text-xl">{t('orderTracker.timeline')}</h2>
@@ -201,7 +204,12 @@ function OrderList() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="price-en text-marea-gold">{formatPrice(order.total)}</span>
+            <div className="text-end">
+              <span className="price-en block text-marea-gold">{formatPrice(order.total)}</span>
+              {order.promo && (
+                <span className="mt-0.5 block text-xs text-marea-muted">{order.promo.benefit}</span>
+              )}
+            </div>
             <ChevronRight size={18} className="text-marea-muted" />
           </div>
         </Link>

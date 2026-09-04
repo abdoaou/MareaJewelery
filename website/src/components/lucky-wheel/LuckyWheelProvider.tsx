@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import LuckyWheelModal, { POPUP_KEY, PENDING_SPIN_KEY } from './LuckyWheelModal'
+import LuckyWheelModal, { POPUP_KEY } from './LuckyWheelModal'
 import SpinWinButton from './SpinWinButton'
 import { api, type WheelPrize, type WheelStatus } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
@@ -27,16 +27,14 @@ export function LuckyWheelProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const [prizes, setPrizes] = useState<WheelPrize[]>([])
   const [wheelReady, setWheelReady] = useState(false)
-  const { customer, ready } = useAuth()
+  const { ready } = useAuth()
   const statusRef = useRef<WheelStatus | null>(null)
   const popupChecked = useRef(false)
 
   const refreshWheel = useCallback(async (opts?: { silent?: boolean }) => {
     try {
-      const [prizesRes, statusRes] = await Promise.all([
-        api.getWheelPrizes({ silent: true }),
-        api.getWheelStatus({ silent: opts?.silent ?? true }),
-      ])
+      const prizesRes = await api.getWheelPrizes({ silent: true })
+      const statusRes = await api.getWheelStatus({ silent: opts?.silent ?? true })
       setPrizes(prizesRes.data)
       statusRef.current = statusRes.data
       setWheelReady(true)
@@ -51,10 +49,13 @@ export function LuckyWheelProvider({ children }: { children: ReactNode }) {
 
   const openWheel = useCallback(() => setOpen(true), [])
 
-  // Prefetch wheel data as soon as auth boot completes
+  // Prefetch wheel data after auth boot — slight delay avoids DB burst with cart/wishlist sync
   useEffect(() => {
     if (!ready) return
-    void refreshWheel({ silent: true })
+    const timer = window.setTimeout(() => {
+      void refreshWheel({ silent: true })
+    }, 600)
+    return () => window.clearTimeout(timer)
   }, [ready, refreshWheel])
 
   // Auto-popup once — uses cached status (no extra wait)
@@ -73,16 +74,6 @@ export function LuckyWheelProvider({ children }: { children: ReactNode }) {
 
     return () => window.clearTimeout(timer)
   }, [ready, wheelReady])
-
-  useEffect(() => {
-    if (!customer) return
-    const spinId = localStorage.getItem(PENDING_SPIN_KEY)
-    if (!spinId) return
-
-    void api.claimWheel(spinId).then(() => {
-      localStorage.removeItem(PENDING_SPIN_KEY)
-    }).catch(() => {})
-  }, [customer])
 
   const value = useMemo(
     () => ({ openWheel, prizes, wheelReady, refreshWheel, applyStatus }),

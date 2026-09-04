@@ -22,6 +22,68 @@ const orderItemsInclude = {
   },
 }
 
+const orderCouponInclude = {
+  coupon: {
+    select: {
+      code: true,
+      description: true,
+      discountType: true,
+      discountValue: true,
+      wheelSpins: {
+        take: 1,
+        select: {
+          prize: { select: { name: true, type: true, value: true } },
+        },
+      },
+    },
+  },
+}
+
+function buildOrderPromo(order) {
+  const coupon = order.coupon
+  if (!coupon) return null
+
+  const wheelSpin = coupon.wheelSpins?.[0]
+  const prize = wheelSpin?.prize
+  const discountType = String(coupon.discountType || '').toUpperCase()
+  const discountValue = coupon.discountValue != null ? Number(coupon.discountValue) : null
+  const prizeType = prize?.type ? String(prize.type).toLowerCase() : null
+
+  let benefit = prize?.name || coupon.description || coupon.code
+  if (!prize?.name) {
+    if (discountType === 'PERCENTAGE' && discountValue) benefit = `${discountValue}% off`
+    else if (discountType === 'FREE_SHIPPING') benefit = 'Free shipping'
+    else if (discountType === 'FIXED' && discountValue) benefit = `$${discountValue} off`
+  }
+
+  return {
+    kind: wheelSpin ? 'wheel' : 'coupon',
+    code: coupon.code,
+    benefit,
+    prizeType,
+    prizeName: prize?.name ?? null,
+    discountType: discountType.toLowerCase(),
+    discountValue,
+    discountAmount: Number(order.discount || 0),
+    freeShipping: discountType === 'FREE_SHIPPING' || prizeType === 'free_shipping',
+    freeGift: prizeType === 'free_gift',
+  }
+}
+
+function formatOrder(order) {
+  const promo = buildOrderPromo(order)
+  const { coupon, ...rest } = order
+  return {
+    ...rest,
+    subtotal: Number(order.subtotal),
+    discount: Number(order.discount),
+    tax: Number(order.tax),
+    shipping: Number(order.shipping),
+    total: Number(order.total),
+    promo,
+  }
+}
+
 export const orderService = {
   create: async (userId, body, options = {}) => {
     const items = body.items || []
@@ -110,7 +172,7 @@ export const orderService = {
             },
           },
         },
-        include: orderItemsInclude,
+        include: { ...orderItemsInclude, ...orderCouponInclude },
       })
 
       if (couponId) {
@@ -174,7 +236,7 @@ export const orderService = {
       })
     }
 
-    return order
+    return formatOrder(order)
   },
 
   adminCreate: async (adminId, body) => {
@@ -210,6 +272,7 @@ export const orderService = {
         where,
         include: {
           ...orderItemsInclude,
+          ...orderCouponInclude,
           user: { select: { id: true, email: true, firstName: true, lastName: true, phone: true } },
         },
         orderBy: { createdAt: 'desc' },
@@ -219,7 +282,13 @@ export const orderService = {
       prisma.order.count({ where }),
     ])
 
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) }
+    return {
+      items: items.map(formatOrder),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    }
   },
 
   getById: async (id, userId, isAdmin) => {
@@ -227,13 +296,14 @@ export const orderService = {
       where: isAdmin ? { id } : { id, userId },
       include: {
         ...orderItemsInclude,
+        ...orderCouponInclude,
         statusHistory: { orderBy: { createdAt: 'asc' } },
         payments: true,
         user: { select: { id: true, email: true, firstName: true, lastName: true, phone: true } },
       },
     })
     if (!order) throw new ValidationError('Order not found')
-    return order
+    return formatOrder(order)
   },
 
   updateStatus: async (id, status, note, adminId) => {
