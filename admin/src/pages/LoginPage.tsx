@@ -39,11 +39,11 @@ export function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-xs text-white/50">Email</label>
+            <label className="label-xs">Email</label>
             <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-white/50">Password</label>
+            <label className="label-xs">Password</label>
             <input
               className="input"
               type="password"

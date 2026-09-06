@@ -111,7 +111,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
                           key={n.id}
                           type="button"
                           onClick={() => handleNotificationClick(n)}
-                          className={`w-full border-b border-[var(--color-border)] px-4 py-3 text-left text-sm hover:bg-white/5 ${!n.isRead ? 'bg-gold/5' : ''} ${path ? 'cursor-pointer' : ''}`}
+                          className={`w-full border-b border-[var(--color-border)] px-4 py-3 text-left text-sm hover:bg-soft ${!n.isRead ? 'bg-gold/5' : ''} ${path ? 'cursor-pointer' : ''}`}
                         >
                           <p className="font-medium">{n.title}</p>
                           <p className="mt-0.5 text-muted">{n.message}</p>

@@ -18,7 +18,7 @@ const colors: Record<string, string> = {
 
 export function Badge({ status }: { status: string }) {
   return (
-    <span className={clsx('badge', colors[status] || 'bg-white/10 text-white/70')}>
+    <span className={clsx('badge', colors[status] || 'badge-default')}>
       {status.replace(/_/g, ' ')}
     </span>
   )

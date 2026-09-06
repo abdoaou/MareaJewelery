@@ -184,7 +184,7 @@ export function CategoriesPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px]">
-              <thead className="border-b border-[var(--color-border)] bg-white/[0.02]">
+              <thead className="border-b border-[var(--color-border)] bg-table-muted">
                 <tr>
                   <th className="table-th">Photo</th>
                   <th className="table-th">Name</th>
@@ -197,7 +197,7 @@ export function CategoriesPage() {
               </thead>
               <tbody>
                 {categories.map((c) => (
-                  <tr key={c.id} className="border-b border-[var(--color-border)] hover:bg-white/[0.02]">
+                  <tr key={c.id} className="border-b border-[var(--color-border)] row-hover">
                     <td className="table-td">
                       {c.image ? (
                         <img
@@ -206,13 +206,13 @@ export function CategoriesPage() {
                           className="h-12 w-12 rounded-lg object-cover"
                         />
                       ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/5 text-white/30">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-soft text-subtle">
                           <ImagePlus size={16} />
                         </div>
                       )}
                     </td>
                     <td className="table-td font-medium">{c.name}</td>
-                    <td className="table-td font-mono text-xs text-white/50">{c.slug}</td>
+                    <td className="table-td font-mono text-xs text-muted">{c.slug}</td>
                     <td className="table-td">{c.parent?.name || '—'}</td>
                     <td className="table-td">{c._count?.products ?? 0}</td>
                     <td className="table-td">{c.sortOrder}</td>
@@ -243,7 +243,7 @@ export function CategoriesPage() {
           {error && <p className="text-sm text-red-400">{error}</p>}
 
           <div>
-            <label className="mb-1 block text-xs text-white/50">Category photo</label>
+            <label className="label-xs">Category photo</label>
             {previewUrl ? (
               <div className="relative inline-block">
                 <img
@@ -263,7 +263,7 @@ export function CategoriesPage() {
             ) : (
               <button
                 type="button"
-                className="flex h-36 w-36 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--color-border)] text-sm text-white/50 hover:border-gold hover:text-gold"
+                className="flex h-36 w-36 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--color-border)] text-sm text-muted hover:border-gold hover:text-gold"
                 onClick={() => fileInputRef.current?.click()}
               >
                 <ImagePlus size={22} />
@@ -289,7 +289,7 @@ export function CategoriesPage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-white/50">Name</label>
+            <label className="mb-1 block text-xs text-muted">Name</label>
             <input
               className="input"
               value={form.name}
@@ -297,7 +297,7 @@ export function CategoriesPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-white/50">Slug</label>
+            <label className="mb-1 block text-xs text-muted">Slug</label>
             <input
               className="input"
               value={form.slug}
@@ -305,7 +305,7 @@ export function CategoriesPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-white/50">Parent</label>
+            <label className="mb-1 block text-xs text-muted">Parent</label>
             <select
               className="input"
               value={form.parentId}
@@ -322,7 +322,7 @@ export function CategoriesPage() {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-white/50">Sort Order</label>
+            <label className="mb-1 block text-xs text-muted">Sort Order</label>
             <input
               className="input"
               type="number"

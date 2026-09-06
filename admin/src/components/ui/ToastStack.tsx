@@ -32,7 +32,7 @@ export function ToastStack() {
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-gold">{t.title}</p>
-              <p className="mt-1 text-sm text-white/70">{t.message}</p>
+              <p className="mt-1 text-sm text-muted">{t.message}</p>
               {t.href && (
                 <p className="mt-2 flex items-center gap-1 text-xs text-gold/80">
                   <ExternalLink size={12} /> Click to view
@@ -45,7 +45,7 @@ export function ToastStack() {
                 e.stopPropagation()
                 removeToast(t.id)
               }}
-              className="shrink-0 text-white/40 hover:text-white"
+              className="shrink-0 text-subtle hover:text-[var(--color-fg)]"
             >
               <X size={14} />
             </button>

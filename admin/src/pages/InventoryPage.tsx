@@ -70,7 +70,7 @@ export function InventoryPage() {
         ) : (
           <div className="overflow-x-auto">
           <table className="w-full min-w-[720px]">
-            <thead className="border-b border-[var(--color-border)] bg-white/[0.02]">
+            <thead className="border-b border-[var(--color-border)] bg-table-muted">
               <tr>
                 <th className="table-th">Product</th>
                 <th className="table-th">SKU</th>
@@ -90,10 +90,10 @@ export function InventoryPage() {
                   <tr
                     key={row.id}
                     id={`inv-product-${row.product.id}`}
-                    className={`border-b border-[var(--color-border)] hover:bg-white/[0.02] ${isLow ? 'bg-red-500/5' : ''} ${highlighted ? 'ring-2 ring-inset ring-gold/50 bg-gold/10' : ''}`}
+                    className={`border-b border-[var(--color-border)] row-hover ${isLow ? 'bg-red-500/5' : ''} ${highlighted ? 'ring-2 ring-inset ring-gold/50 bg-gold/10' : ''}`}
                   >
                     <td className="table-td font-medium">{row.product.name}</td>
-                    <td className="table-td font-mono text-xs text-white/50">{row.product.sku || '—'}</td>
+                    <td className="table-td font-mono text-xs text-muted">{row.product.sku || '—'}</td>
                     <td className="table-td">{row.warehouse.name}</td>
                     <td className="table-td">{row.currentStock}</td>
                     <td className="table-td">{row.reservedStock}</td>
@@ -115,7 +115,7 @@ export function InventoryPage() {
           <div className="space-y-4">
             <p className="text-sm">{adjustRow.product.name} — current: {adjustRow.currentStock}</p>
             <div>
-              <label className="mb-1 block text-xs text-white/50">Change (+/-)</label>
+              <label className="label-xs">Change (+/-)</label>
               <input className="input" type="number" value={qty} onChange={(e) => setQty(e.target.value)} placeholder="e.g. 10 or -5" />
             </div>
             <div className="flex justify-end gap-2">

@@ -108,6 +108,28 @@ body {
   color: var(--color-subtle);
 }
 
+.bg-soft {
+  background: color-mix(in srgb, var(--color-fg) 5%, transparent);
+}
+
+.bg-table-muted {
+  background: color-mix(in srgb, var(--color-fg) 2%, transparent);
+}
+
+.row-hover:hover {
+  background: color-mix(in srgb, var(--color-fg) 2%, transparent);
+}
+
+.badge-default {
+  background: color-mix(in srgb, var(--color-fg) 10%, transparent);
+  color: var(--color-muted);
+}
+
+.label-xs {
+  @apply mb-1 block text-xs;
+  color: var(--color-muted);
+}
+
 .surface-hover:hover {
   background: color-mix(in srgb, var(--color-fg) 4%, transparent);
 }

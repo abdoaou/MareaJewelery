@@ -161,7 +161,7 @@ export function OrdersPage() {
             <Plus size={16} /> Create Order
           </button>
           <div className="relative">
-            <Search className="absolute top-1/2 left-3 -translate-y-1/2 text-white/30" size={14} />
+            <Search className="absolute top-1/2 left-3 -translate-y-1/2 text-subtle" size={14} />
             <input
               className="input pl-8"
               placeholder="Search orders or email…"
@@ -191,7 +191,7 @@ export function OrdersPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="border-b border-[var(--color-border)] bg-white/[0.02]">
+              <thead className="border-b border-[var(--color-border)] bg-table-muted">
                 <tr>
                   <th className="table-th">Items</th>
                   <th className="table-th">Order</th>
@@ -208,24 +208,24 @@ export function OrdersPage() {
                 {orders.map((o) => {
                   const thumb = o.items?.[0] ? itemImage(o.items[0]) : null
                   return (
-                    <tr key={o.id} className="border-b border-[var(--color-border)] hover:bg-white/[0.02]">
+                    <tr key={o.id} className="border-b border-[var(--color-border)] row-hover">
                       <td className="table-td">
                         <div className="flex items-center gap-1">
                           {thumb ? (
                             <img src={thumb} alt="" className="h-10 w-10 rounded-lg object-cover" />
                           ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5">
-                              <Package size={14} className="text-white/30" />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-soft">
+                              <Package size={14} className="text-subtle" />
                             </div>
                           )}
                           {o.items && o.items.length > 1 && (
-                            <span className="text-xs text-white/40">+{o.items.length - 1}</span>
+                            <span className="text-xs text-subtle">+{o.items.length - 1}</span>
                           )}
                         </div>
                       </td>
                       <td className="table-td font-mono text-xs">{o.orderNumber}</td>
                       <td className="table-td">{o.user?.email || 'Guest'}</td>
-                      <td className="table-td font-mono text-xs text-white/70">{orderPhone(o)}</td>
+                      <td className="table-td font-mono text-xs text-muted">{orderPhone(o)}</td>
                       <td className="table-td">${Number(o.total).toFixed(2)}</td>
                       <td className="table-td max-w-[140px]">
                         {o.promo ? (
@@ -233,11 +233,11 @@ export function OrdersPage() {
                             {promoLabel(o.promo)}
                           </span>
                         ) : (
-                          <span className="text-white/30">—</span>
+                          <span className="text-subtle">—</span>
                         )}
                       </td>
                       <td className="table-td"><Badge status={o.status} /></td>
-                      <td className="table-td text-white/50">{format(new Date(o.createdAt), 'MMM d, yyyy HH:mm')}</td>
+                      <td className="table-td text-muted">{format(new Date(o.createdAt), 'MMM d, yyyy HH:mm')}</td>
                       <td className="table-td">
                         <button type="button" onClick={() => ordersApi.get(o.id).then((r) => setSelected(r.data))} className="btn-ghost text-gold">
                           <Eye size={16} />
@@ -255,7 +255,7 @@ export function OrdersPage() {
       {total > 15 && (
         <div className="mt-4 flex justify-center gap-2">
           <button type="button" className="btn-ghost" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</button>
-          <span className="px-3 py-2 text-sm text-white/50">Page {page}</span>
+          <span className="px-3 py-2 text-sm text-muted">Page {page}</span>
           <button type="button" className="btn-ghost" disabled={page * 15 >= total} onClick={() => setPage((p) => p + 1)}>Next</button>
         </div>
       )}
@@ -357,23 +357,23 @@ export function OrdersPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <p className="text-xs text-white/40">Customer</p>
+                <p className="text-xs text-subtle">Customer</p>
                 <p>{selected.user?.firstName} {selected.user?.lastName} ({selected.user?.email})</p>
               </div>
               <div>
-                <p className="text-xs text-white/40">Phone</p>
+                <p className="text-xs text-subtle">Phone</p>
                 <p className="font-mono text-sm">{orderPhone(selected)}</p>
               </div>
               <div>
-                <p className="text-xs text-white/40">Payment</p>
+                <p className="text-xs text-subtle">Payment</p>
                 <p>{selected.paymentMethod} — {selected.paymentStatus}</p>
               </div>
               <div>
-                <p className="text-xs text-white/40">Shipping</p>
+                <p className="text-xs text-subtle">Shipping</p>
                 <p>{selected.shippingAddress?.line1}, {selected.shippingAddress?.city}</p>
               </div>
               <div>
-                <p className="text-xs text-white/40">Total</p>
+                <p className="text-xs text-subtle">Total</p>
                 <p className="text-lg font-medium text-gold">${Number(selected.total).toFixed(2)}</p>
               </div>
             </div>
@@ -384,21 +384,21 @@ export function OrdersPage() {
                   {selected.promo.kind === 'wheel' ? 'Lucky Wheel prize' : 'Coupon used'}
                 </p>
                 <p className="mt-1 font-medium">{selected.promo.benefit}</p>
-                <p className="mt-1 font-mono text-xs text-white/60">Code: {selected.promo.code}</p>
+                <p className="mt-1 font-mono text-xs text-muted">Code: {selected.promo.code}</p>
                 {selected.promo.freeGift && (
-                  <p className="mt-2 text-sm text-white/70">Includes a free gift with this order</p>
+                  <p className="mt-2 text-sm text-muted">Includes a free gift with this order</p>
                 )}
                 {selected.promo.freeShipping && (
-                  <p className="mt-2 text-sm text-white/70">Free delivery applied</p>
+                  <p className="mt-2 text-sm text-muted">Free delivery applied</p>
                 )}
               </div>
             )}
 
             <div className="rounded-lg border border-[var(--color-border)] p-4">
-              <p className="mb-3 text-xs text-white/40">Price breakdown</p>
+              <p className="mb-3 text-xs text-subtle">Price breakdown</p>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-white/60">Subtotal</span>
+                  <span className="text-muted">Subtotal</span>
                   <span>${Number(selected.subtotal).toFixed(2)}</span>
                 </div>
                 {Number(selected.discount || 0) > 0 && (
@@ -409,13 +409,13 @@ export function OrdersPage() {
                 )}
                 {Number(selected.shipping || 0) > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-white/60">Shipping</span>
+                    <span className="text-muted">Shipping</span>
                     <span>${Number(selected.shipping).toFixed(2)}</span>
                   </div>
                 )}
                 {Number(selected.tax || 0) > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-white/60">Tax</span>
+                    <span className="text-muted">Tax</span>
                     <span>${Number(selected.tax).toFixed(2)}</span>
                   </div>
                 )}
@@ -427,7 +427,7 @@ export function OrdersPage() {
             </div>
 
             <div>
-              <p className="mb-2 text-xs text-white/40">Items</p>
+              <p className="mb-2 text-xs text-subtle">Items</p>
               {selected.items?.map((item) => {
                 const img = itemImage(item)
                 return (
@@ -435,13 +435,13 @@ export function OrdersPage() {
                     {img ? (
                       <img src={img} alt={item.productName} className="h-14 w-14 rounded-lg object-cover" />
                     ) : (
-                      <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-white/5">
-                        <Package size={20} className="text-white/30" />
+                      <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-soft">
+                        <Package size={20} className="text-subtle" />
                       </div>
                     )}
                     <div className="flex-1">
                       <p className="font-medium">{item.productName}</p>
-                      <p className="text-xs text-white/40">SKU: {item.sku || '—'} · Qty: {item.quantity}</p>
+                      <p className="text-xs text-subtle">SKU: {item.sku || '—'} · Qty: {item.quantity}</p>
                     </div>
                     <p className="font-medium">${Number(item.lineTotal).toFixed(2)}</p>
                   </div>
@@ -451,12 +451,12 @@ export function OrdersPage() {
 
             {selected.statusHistory && selected.statusHistory.length > 0 && (
               <div>
-                <p className="mb-2 text-xs text-white/40">Timeline</p>
+                <p className="mb-2 text-xs text-subtle">Timeline</p>
                 {selected.statusHistory.map((h, i) => (
                   <div key={i} className="flex gap-3 text-sm">
-                    <span className="text-white/30">{format(new Date(h.createdAt), 'MMM d HH:mm')}</span>
+                    <span className="text-subtle">{format(new Date(h.createdAt), 'MMM d HH:mm')}</span>
                     <Badge status={h.status} />
-                    {h.note && <span className="text-white/50">{h.note}</span>}
+                    {h.note && <span className="text-muted">{h.note}</span>}
                   </div>
                 ))}
               </div>

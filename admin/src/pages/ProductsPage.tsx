@@ -436,7 +436,7 @@ export function ProductsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="border-b border-[var(--color-border)] bg-white/[0.02]">
+              <thead className="border-b border-[var(--color-border)] bg-table-muted">
                 <tr>
                   <th className="table-th">Product</th>
                   <th className="table-th">SKU</th>
@@ -455,7 +455,7 @@ export function ProductsPage() {
                   const thumb = primaryUrl(p)
                   const extra = (p.images?.length || 0) - 1
                   return (
-                    <tr key={p.id} className="border-b border-[var(--color-border)] hover:bg-white/[0.02]">
+                    <tr key={p.id} className="border-b border-[var(--color-border)] row-hover">
                       <td className="table-td">
                         <div className="flex items-center gap-3">
                           {thumb ? (
@@ -468,7 +468,7 @@ export function ProductsPage() {
                               )}
                             </div>
                           ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-xs">—</div>
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-soft text-xs">—</div>
                           )}
                           <span className="font-medium">{p.name}</span>
                         </div>
@@ -511,7 +511,7 @@ export function ProductsPage() {
           <button type="button" className="btn-ghost" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
             Previous
           </button>
-          <span className="px-3 py-2 text-sm text-white/50">
+          <span className="px-3 py-2 text-sm text-muted">
             Page {page} of {Math.ceil(total / PAGE_SIZE)}
           </span>
           <button
@@ -621,7 +621,7 @@ export function ProductsPage() {
                         type="button"
                         title="Set as main image"
                         onClick={() => setPrimaryKey(key)}
-                        className={`rounded p-1 ${isPrimary ? 'text-gold' : 'text-white/70 hover:text-gold'}`}
+                        className={`rounded p-1 ${isPrimary ? 'text-gold' : 'text-muted hover:text-gold'}`}
                       >
                         <Star size={14} fill={isPrimary ? 'currentColor' : 'none'} />
                       </button>
@@ -629,7 +629,7 @@ export function ProductsPage() {
                         type="button"
                         title="Remove"
                         onClick={() => removeExisting(img.id)}
-                        className="rounded p-1 text-white/70 hover:text-red-400"
+                        className="rounded p-1 text-muted hover:text-red-400"
                       >
                         <X size={14} />
                       </button>
@@ -659,7 +659,7 @@ export function ProductsPage() {
                         type="button"
                         title="Set as main image"
                         onClick={() => setPrimaryKey(key)}
-                        className={`rounded p-1 ${isPrimary ? 'text-gold' : 'text-white/70 hover:text-gold'}`}
+                        className={`rounded p-1 ${isPrimary ? 'text-gold' : 'text-muted hover:text-gold'}`}
                       >
                         <Star size={14} fill={isPrimary ? 'currentColor' : 'none'} />
                       </button>
@@ -667,7 +667,7 @@ export function ProductsPage() {
                         type="button"
                         title="Remove"
                         onClick={() => removePending(img.localId)}
-                        className="rounded p-1 text-white/70 hover:text-red-400"
+                        className="rounded p-1 text-muted hover:text-red-400"
                       >
                         <X size={14} />
                       </button>
@@ -677,7 +677,7 @@ export function ProductsPage() {
                         Main
                       </span>
                     )}
-                    <span className="absolute top-1.5 right-1.5 max-w-[70%] truncate rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white/80">
+                    <span className="absolute top-1.5 right-1.5 max-w-[70%] truncate rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
                       {img.file.name}
                     </span>
                   </div>
