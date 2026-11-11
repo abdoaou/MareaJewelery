@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, Copy, Check, Gift, Sparkles } from 'lucide-react'
@@ -6,7 +6,14 @@ import { useTranslation } from 'react-i18next'
 import { api, type WheelPrize, type WheelSpinResult, type WheelStatus } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useLuckyWheel } from './LuckyWheelProvider'
-import WheelCanvas, { WHEEL_SPIN_MS, computeWheelTargetRotation } from './WheelCanvas'
+import WheelCanvas from './WheelCanvas'
+import {
+  WHEEL_SPIN_MS,
+  animateWheelRotation,
+  computeWheelTargetRotation,
+  prefersReducedMotion,
+  randomLandingOffset,
+} from './wheelSpinAnimation'
 
 const POPUP_KEY = 'marea_wheel_popup_seen'
 const PENDING_SPIN_KEY = 'marea_wheel_pending_spin_id'
@@ -18,24 +25,12 @@ interface LuckyWheelModalProps {
   onClose: () => void
 }
 
-function Confetti() {
-  const pieces = Array.from({ length: 28 }, (_, i) => i)
+function SparkleBurst({ active }: { active: boolean }) {
+  if (!active) return null
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-      {pieces.map((i) => (
-        <motion.span
-          key={i}
-          className={`wheel-confetti-piece${i % 3 === 0 ? ' wheel-confetti-piece--star' : ''}`}
-          initial={{ opacity: 0, left: '50%', top: '38%', scale: 0, rotate: 0 }}
-          animate={{
-            opacity: [0, 1, 1, 0],
-            left: `${12 + (i * 2.7) % 76}%`,
-            top: `${8 + (i * 3.1) % 55}%`,
-            scale: [0, 1.1, 0.85, 0.4],
-            rotate: [0, 120 + i * 18, 240 + i * 12],
-          }}
-          transition={{ duration: 1.6, delay: i * 0.028, ease: [0.22, 1, 0.36, 1] }}
-        />
+    <div className="wheel-win-burst pointer-events-none absolute left-1/2 top-[42%] z-40 -translate-x-1/2" aria-hidden>
+      {Array.from({ length: 16 }, (_, i) => (
+        <span key={i} className="wheel-win-burst__ray" style={{ '--burst-i': i } as CSSProperties} />
       ))}
     </div>
   )
@@ -71,73 +66,86 @@ function ResultPanel({ result, customer, copied, onCopy, onClose }: ResultPanelP
   if (!result.isWinner) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="wheel-result-card mt-4 text-center sm:mt-5"
+        className="wheel-result-card text-center"
+        role="status"
       >
         <p className="font-serif text-xl text-[var(--wheel-ink)]">{t('wheel.noLuck')}</p>
-        <p className="mt-2 text-sm text-[var(--wheel-ink-muted)]">{t('wheel.noLuckHint')}</p>
+        <p className="mt-2 font-[family-name:var(--font-wheel-ui)] text-sm text-[var(--wheel-ink-muted)]">
+          {t('wheel.tryAgainHint')}
+        </p>
       </motion.div>
     )
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 22 }}
+      initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="wheel-result-stack mt-4 space-y-3 sm:mt-5 sm:space-y-4"
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      className="wheel-result-stack space-y-3 sm:space-y-4"
+      role="status"
     >
-      {/* Step 1: Prize reveal */}
       <div className="wheel-result-card relative overflow-hidden text-center">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(212,185,122,0.14)] to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(212,185,122,0.16)] to-transparent" />
         <div className="relative px-3 py-4 sm:px-5 sm:py-5">
-          <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(201,169,98,0.45)] bg-[rgba(212,185,122,0.18)] sm:mb-3 sm:h-11 sm:w-11">
-            <Gift className="text-[#9a7b3c]" size={18} />
+          <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(184,146,74,0.45)] bg-[rgba(212,185,122,0.15)]">
+            <Gift className="text-[#8C6B2E]" size={18} />
           </div>
           <p className="wheel-eyebrow">{t('wheel.youWon')}</p>
-          <p className="mt-1 font-serif text-2xl tracking-wide text-[var(--wheel-ink)] sm:text-3xl md:text-[2rem]">
+          <p className="mt-1 font-serif text-2xl tracking-wide text-[var(--wheel-ink)] sm:text-[2rem]">
             {prizeHeadline(result.prize)}
           </p>
           {prizeSubline(result.prize) && (
-            <p className="mt-1 text-sm text-[var(--wheel-ink-muted)]">{prizeSubline(result.prize)}</p>
+            <p className="mt-1 font-[family-name:var(--font-wheel-ui)] text-sm text-[var(--wheel-ink-muted)]">
+              {prizeSubline(result.prize)}
+            </p>
           )}
         </div>
       </div>
 
-      {/* Step 2: Claim or coupon */}
       {needsLogin ? (
         <div className="wheel-claim-card text-center">
-          <Sparkles className="mx-auto mb-2 text-[#9a7b3c]" size={18} />
-          <p className="font-medium text-[var(--wheel-ink)]">{t('wheel.claimTitle')}</p>
-          <p className="mt-1.5 text-sm leading-relaxed text-[var(--wheel-ink-muted)]">{t('wheel.claimPrompt')}</p>
-          <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3">
-            <Link to="/login" className="btn-primary w-full px-5 py-2.5 text-sm sm:min-w-[120px] sm:w-auto" onClick={onClose}>
-              {t('nav.login')}
-            </Link>
-            <Link to="/register" className="btn-secondary w-full px-5 py-2.5 text-sm sm:min-w-[120px] sm:w-auto" onClick={onClose}>
+          <Sparkles className="mx-auto mb-2 text-[#8C6B2E]" size={18} />
+          <p className="font-serif text-lg text-[var(--wheel-ink)]">{t('wheel.claimTitle')}</p>
+          <p className="mt-1.5 font-[family-name:var(--font-wheel-ui)] text-sm leading-relaxed text-[var(--wheel-ink-muted)]">
+            {t('wheel.claimPrompt')}
+          </p>
+          <aside className="mt-4 space-y-2.5" aria-label={t('wheel.claimTitle')}>
+            <Link to="/register" className="wheel-claim-btn w-full" onClick={onClose}>
               {t('nav.register')}
             </Link>
-          </div>
+            <Link to="/login" className="wheel-claim-btn wheel-claim-btn--ghost w-full" onClick={onClose}>
+              {t('nav.login')}
+            </Link>
+          </aside>
         </div>
       ) : (
         <div className="wheel-claim-card text-center">
-          <p className="text-sm text-[var(--wheel-ink-muted)]">
+          <p className="font-[family-name:var(--font-wheel-ui)] text-sm text-[var(--wheel-ink-muted)]">
             {result.alreadyUsed ? t('wheel.alreadyUsed') : t('wheel.saved')}
           </p>
           {showCoupon && (
             <div className="mt-3">
               <p className="wheel-eyebrow mb-2">{t('wheel.yourCode')}</p>
-              <div className="mt-3 flex max-w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-center">
-                <code className="wheel-coupon-code rounded-lg border border-[rgba(201,169,98,0.5)] bg-[rgba(255,255,255,0.65)] px-3 py-2.5 font-mono text-xs tracking-wider text-[var(--wheel-ink)] sm:px-4 sm:text-sm">
+              <div className="flex max-w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-center">
+                <code className="wheel-coupon-code rounded-lg border border-[rgba(184,146,74,0.45)] bg-[rgba(255,255,255,0.72)] px-3 py-2.5 font-mono text-xs tracking-wider text-[var(--wheel-ink)] sm:px-4 sm:text-sm">
                   {result.couponCode}
                 </code>
-                <button type="button" onClick={onCopy} className="btn-secondary shrink-0 self-center px-3 py-2.5 sm:self-auto" aria-label="Copy code">
+                <button
+                  type="button"
+                  onClick={onCopy}
+                  className="wheel-claim-btn wheel-claim-btn--ghost shrink-0 px-4 py-2.5"
+                  aria-label="Copy code"
+                >
                   {copied ? <Check size={16} /> : <Copy size={16} />}
                 </button>
               </div>
-              <p className="mt-2 text-xs text-[var(--wheel-ink-muted)]">{t('wheel.codeHint')}</p>
+              <p className="mt-2 font-[family-name:var(--font-wheel-ui)] text-xs text-[var(--wheel-ink-muted)]">
+                {t('wheel.codeHint')}
+              </p>
             </div>
           )}
         </div>
@@ -159,10 +167,11 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
   const [result, setResult] = useState<WheelSpinResult | null>(null)
   const [alreadySpun, setAlreadySpun] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [showConfetti, setShowConfetti] = useState(false)
+  const [showBurst, setShowBurst] = useState(false)
   const rotationBase = useRef(0)
-  const spinTimer = useRef<number | null>(null)
+  const cancelSpin = useRef<(() => void) | null>(null)
   const preSpinTimer = useRef<number | null>(null)
+  const pendingResult = useRef<WheelSpinResult | null>(null)
 
   const syncStatus = useCallback((status: WheelStatus) => {
     applyStatus(status)
@@ -209,7 +218,7 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
     }
 
     return () => {
-      if (spinTimer.current) window.clearTimeout(spinTimer.current)
+      cancelSpin.current?.()
       if (preSpinTimer.current) window.clearInterval(preSpinTimer.current)
     }
   }, [open, cachedPrizes, wheelReady, load, syncStatus])
@@ -225,9 +234,9 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
   const startPreSpin = useCallback(() => {
     setPreSpinning(true)
     preSpinTimer.current = window.setInterval(() => {
-      rotationBase.current += 28
+      rotationBase.current += 22
       setRotation(rotationBase.current)
-    }, 36)
+    }, 40)
   }, [])
 
   useEffect(() => {
@@ -241,16 +250,17 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
 
   useEffect(() => {
     if (result?.isWinner && !spinning) {
-      setShowConfetti(true)
-      const timer = window.setTimeout(() => setShowConfetti(false), 1500)
+      setShowBurst(true)
+      const timer = window.setTimeout(() => setShowBurst(false), 1400)
       return () => window.clearTimeout(timer)
     }
-    setShowConfetti(false)
+    setShowBurst(false)
   }, [result, spinning])
 
   async function handleSpin() {
     if (spinning || preSpinning || alreadySpun || !prizes.length) return
     setError('')
+    setResult(null)
     startPreSpin()
 
     try {
@@ -266,28 +276,38 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
       }
 
       localStorage.setItem(PENDING_SPIN_KEY, spinResult.spinId)
+      pendingResult.current = spinResult
 
-      const currentRotation = rotationBase.current
-      const target = computeWheelTargetRotation(
-        currentRotation,
-        spinResult.segmentIndex,
-        prizes.length,
-      )
+      const from = rotationBase.current
+      const offset = randomLandingOffset(prizes.length)
+      const target = computeWheelTargetRotation(from, spinResult.segmentIndex, prizes.length, undefined, offset)
 
       rotationBase.current = target
       setSpinning(true)
-      requestAnimationFrame(() => setRotation(target))
 
-      spinTimer.current = window.setTimeout(() => {
-        setSpinning(false)
-        setResult(spinResult)
-        setAlreadySpun(true)
-        if (customer && !spinResult.requiresLogin) {
-          localStorage.removeItem(PENDING_SPIN_KEY)
-        }
-      }, WHEEL_SPIN_MS + 160)
+      cancelSpin.current?.()
+      cancelSpin.current = animateWheelRotation(
+        from,
+        target,
+        WHEEL_SPIN_MS,
+        (deg) => setRotation(deg),
+        () => {
+          setSpinning(false)
+          const finalResult = pendingResult.current
+          if (finalResult) {
+            setResult(finalResult)
+            setAlreadySpun(true)
+            if (customer && !finalResult.requiresLogin) {
+              localStorage.removeItem(PENDING_SPIN_KEY)
+            }
+          }
+        },
+        prefersReducedMotion(),
+      )
     } catch (err) {
       stopPreSpin()
+      cancelSpin.current?.()
+      setSpinning(false)
       setError(err instanceof Error ? err.message : t('wheel.spinFailed'))
     }
   }
@@ -302,6 +322,7 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
   const canSpin = !loading && !alreadySpun && prizes.length > 0 && !spinning && !preSpinning
   const highlightIndex = result && !spinning && !preSpinning ? result.segmentIndex : null
   const wheelBusy = spinning || preSpinning
+  const showResult = result && !spinning && !preSpinning
 
   return (
     <AnimatePresence>
@@ -317,14 +338,14 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
           aria-labelledby="lucky-wheel-title"
         >
           <motion.div
-            initial={{ opacity: 0, y: 28 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 28 }}
-            transition={{ type: 'spring', damping: 30, stiffness: 320 }}
-            className={`wheel-modal-shell relative w-full overflow-hidden${result && !wheelBusy ? ' wheel-modal-shell--with-result' : ''}`}
+            exit={{ opacity: 0, y: 24 }}
+            transition={{ type: 'spring', damping: 32, stiffness: 340 }}
+            className={`wheel-modal-shell relative w-full${showResult ? ' wheel-modal-shell--with-result' : ''}`}
             onClick={(e) => e.stopPropagation()}
           >
-            {showConfetti && <Confetti />}
+            <SparkleBurst active={showBurst && !prefersReducedMotion()} />
 
             <div className="wheel-sheet-handle sm:hidden" aria-hidden />
 
@@ -332,71 +353,69 @@ export default function LuckyWheelModal({ open, onClose }: LuckyWheelModalProps)
               type="button"
               onClick={onClose}
               disabled={wheelBusy}
-              className="wheel-close-btn absolute end-3 top-3 z-20 rounded-full p-2.5 transition disabled:opacity-40 sm:p-2"
+              className="wheel-close-btn absolute end-3 top-3 z-20 rounded-full p-2.5 transition disabled:opacity-40"
               aria-label={t('wheel.close')}
             >
               <X size={18} />
             </button>
 
-            <div className="wheel-modal-header px-4 pb-3 pt-2 text-center sm:px-6 sm:pb-4 sm:pt-5">
+            <header className="wheel-modal-header px-4 pb-4 pt-3 text-center sm:px-8 sm:pt-5">
               <p className="wheel-eyebrow">{t('wheel.label')}</p>
-              <h2 id="lucky-wheel-title" className="wheel-title mt-1 font-serif text-[var(--wheel-ink)]">
+              <h2 id="lucky-wheel-title" className="wheel-title font-serif text-[var(--wheel-ink)]">
                 {t('wheel.title')}
               </h2>
-              {!result && !spinning && (
-                <p className="mx-auto mt-2 max-w-[300px] text-sm text-[var(--wheel-ink-muted)] sm:max-w-sm">
-                  {t('wheel.subtitle')}
-                </p>
-              )}
-            </div>
+              <p className="wheel-subtitle mx-auto mt-2 max-w-md font-serif italic text-[var(--wheel-ink-muted)]">
+                {t('wheel.subtitle')}
+              </p>
+            </header>
 
-            <div className="wheel-modal-body wheel-modal-panel relative px-3 py-4 sm:px-6 sm:py-5">
+            <div className="wheel-modal-body wheel-modal-panel relative px-4 pb-5 pt-2 sm:px-8">
               {loading && !prizes.length ? (
-                <p className="py-14 text-center text-sm text-[var(--wheel-ink-muted)]">{t('common.loading')}</p>
+                <p className="py-12 text-center font-[family-name:var(--font-wheel-ui)] text-sm text-[var(--wheel-ink-muted)]">
+                  {t('common.loading')}
+                </p>
               ) : prizes.length === 0 ? (
-                <p className="py-14 text-center text-sm text-[var(--wheel-ink-muted)]">{t('wheel.unavailable')}</p>
+                <p className="py-12 text-center font-[family-name:var(--font-wheel-ui)] text-sm text-[var(--wheel-ink-muted)]">
+                  {t('wheel.unavailable')}
+                </p>
               ) : (
                 <div className="wheel-layout">
-                  <div className="wheel-stage-wrap relative">
-                    <WheelCanvas
-                      prizes={prizes}
-                      rotation={rotation}
-                      spinning={spinning}
-                      preSpinning={preSpinning}
-                      spinDurationMs={WHEEL_SPIN_MS}
-                      highlightIndex={highlightIndex}
-                    />
+                  <div className="wheel-column-wheel">
+                    <div className="wheel-stage-wrap relative">
+                      <WheelCanvas
+                        prizes={prizes}
+                        rotation={rotation}
+                        spinning={spinning}
+                        preSpinning={preSpinning}
+                        highlightIndex={highlightIndex}
+                      />
+                    </div>
 
-                    {/* Center spin button */}
-                    {canSpin && (
+                    <div className="mt-4 flex justify-center">
                       <button
                         type="button"
-                        onClick={handleSpin}
-                        className="wheel-center-btn wheel-spin-cta absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full"
+                        onClick={() => void handleSpin()}
+                        disabled={!canSpin}
+                        className="wheel-spin-pill"
                         aria-label={t('wheel.spin')}
                       >
-                        <span className="wheel-spin-cta__label">Spin</span>
+                        {wheelBusy ? t('wheel.spinning') : 'Spin'}
                       </button>
-                    )}
+                    </div>
 
-                    {(spinning || preSpinning) && (
-                      <div className="wheel-center-btn wheel-center-btn--busy absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full">
-                        <div className="wheel-spin-pulse h-2 w-2 rounded-full sm:h-2.5 sm:w-2.5" />
-                        <span className="wheel-eyebrow mt-2 text-[0.62rem] sm:mt-2.5">
-                          {t('wheel.spinning')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="wheel-side-panel">
                     {error && (
-                      <p className="mt-3 text-center text-sm text-red-700/90" role="alert">
+                      <p className="mt-3 text-center font-[family-name:var(--font-wheel-ui)] text-sm text-red-800/90" role="alert">
                         {error}
                       </p>
                     )}
+                  </div>
 
-                    {result && !spinning && !preSpinning && (
+                  <div
+                    className="wheel-side-panel"
+                    aria-live="polite"
+                    aria-atomic="true"
+                  >
+                    {showResult && (
                       <ResultPanel
                         result={result}
                         customer={customer}

@@ -1,39 +1,23 @@
-import { useMemo, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 
 interface WheelCanvasProps {
-  prizes: Array<{ id: string; name: string; type?: string }>
+  prizes: Array<{ id: string; name: string; type?: string; value?: number | null }>
   rotation: number
   spinning: boolean
   preSpinning?: boolean
-  spinDurationMs?: number
   highlightIndex?: number | null
 }
 
-const SIZE = 340
-const CX = SIZE / 2
-const CY = SIZE / 2
-const OUTER_R = 148
-const INNER_R = 48
-const RIM_OUTER = OUTER_R + 10
+const CX = 0
+const CY = 0
+const OUTER_R = 172
+const INNER_R = 54
+const RIM_OUTER = 188
 const STUD_COUNT = 28
 
-export const WHEEL_SPIN_MS = 5200
-/** Long ease-out with a subtle overshoot at the end */
-export const WHEEL_SPIN_EASING = 'cubic-bezier(0.16, 0.78, 0.12, 1)'
+export { WHEEL_SPIN_MS, WHEEL_EXTRA_TURNS, computeWheelTargetRotation } from './wheelSpinAnimation'
 
-/** Align segment center with the top pointer from the current wheel angle. */
-export function computeWheelTargetRotation(
-  currentRotation: number,
-  segmentIndex: number,
-  segmentCount: number,
-  extraTurns = 5,
-): number {
-  const segmentAngle = 360 / segmentCount
-  const segmentMid = segmentIndex * segmentAngle + segmentAngle / 2
-  const currentMod = ((currentRotation % 360) + 360) % 360
-  const delta = (360 - segmentMid - currentMod + 360) % 360
-  return currentRotation + extraTurns * 360 + delta
-}
+type SegmentTone = 'gold' | 'pearl' | 'onyx'
 
 function polar(cx: number, cy: number, r: number, deg: number) {
   const rad = ((deg - 90) * Math.PI) / 180
@@ -51,27 +35,61 @@ function annularSegment(index: number, total: number) {
   return `M ${o1.x} ${o1.y} A ${OUTER_R} ${OUTER_R} 0 ${large} 1 ${o2.x} ${o2.y} L ${i2.x} ${i2.y} A ${INNER_R} ${INNER_R} 0 ${large} 0 ${i1.x} ${i1.y} Z`
 }
 
-type SegmentTone = 'gold' | 'pearl' | 'onyx'
+function isPremiumPrize(prize: { name: string; type?: string; value?: number | null }) {
+  if (prize.type === 'FREE_GIFT') return true
+  if (prize.type === 'DISCOUNT' && prize.value != null && prize.value >= 25) return true
+  return /25\s*%|gift/i.test(prize.name) && !/shipping/i.test(prize.name)
+}
 
-function segmentTone(index: number): SegmentTone {
-  const tones: SegmentTone[] = ['gold', 'pearl', 'onyx']
-  return tones[index % 3]
+function assignTones(
+  prizes: Array<{ name: string; type?: string; value?: number | null }>,
+): SegmentTone[] {
+  const tones: SegmentTone[] = []
+  const cycle: SegmentTone[] = ['gold', 'pearl', 'onyx']
+
+  for (let i = 0; i < prizes.length; i++) {
+    const premium = isPremiumPrize(prizes[i])
+    const prev = tones[i - 1]
+
+    if (premium) {
+      tones.push(prev === 'onyx' ? 'gold' : 'onyx')
+      continue
+    }
+
+    let pick = cycle.find((t) => t !== prev) ?? 'gold'
+    if (i === prizes.length - 1 && pick === tones[0]) {
+      pick = cycle.find((t) => t !== prev && t !== tones[0]) ?? pick
+    }
+    tones.push(pick)
+  }
+
+  for (let i = 0; i < tones.length; i++) {
+    if (isPremiumPrize(prizes[i])) {
+      const prev = tones[i - 1]
+      const next = tones[i + 1]
+      if (prev !== 'onyx' && next !== 'onyx') tones[i] = 'onyx'
+    }
+  }
+
+  return tones
 }
 
 function shortLabel(name: string) {
-  if (/better luck/i.test(name)) return 'Try Again'
+  if (/better luck|try again|no prize/i.test(name)) return 'Try Again'
   if (/free shipping/i.test(name)) return 'Free Ship'
   if (/free gift/i.test(name)) return 'Gift'
   const pct = name.match(/(\d+)\s*%/)
-  if (pct) return `${pct[1]}% Off`
-  return name.length > 12 ? `${name.slice(0, 11)}…` : name
+  if (pct) return `${pct[1]}%`
+  return name.length > 11 ? `${name.slice(0, 10)}…` : name
 }
 
-function labelFill(tone: SegmentTone, winning: boolean) {
-  if (winning) return '#1a1612'
-  if (tone === 'onyx') return '#f3e9d2'
-  if (tone === 'pearl') return '#1a1612'
-  return '#1a1612'
+function labelIsPercent(name: string) {
+  return /\d+\s*%/.test(name) && !/shipping/i.test(name)
+}
+
+function labelFill(tone: SegmentTone) {
+  if (tone === 'onyx') return '#D4B97A'
+  return '#2A1F0E'
 }
 
 export default function WheelCanvas({
@@ -79,251 +97,252 @@ export default function WheelCanvas({
   rotation,
   spinning,
   preSpinning = false,
-  spinDurationMs = WHEEL_SPIN_MS,
   highlightIndex = null,
 }: WheelCanvasProps) {
   const count = Math.max(prizes.length, 1)
   const segmentAngle = 360 / count
-  const labelR = (OUTER_R + INNER_R) / 2
+  const labelR = (OUTER_R + INNER_R) / 2 - 6
   const pointerActive = spinning || preSpinning
+
+  const tones = useMemo(() => assignTones(prizes), [prizes])
 
   const segments = useMemo(
     () =>
       prizes.map((prize, i) => {
         const mid = i * segmentAngle + segmentAngle / 2
         const labelPos = polar(CX, CY, labelR, mid)
-        const tone = segmentTone(i)
-        return { prize, i, mid, labelPos, tone, path: annularSegment(i, count) }
+        const tone = tones[i]
+        const center = polar(CX, CY, (OUTER_R + INNER_R) / 2, mid)
+        return { prize, i, mid, labelPos, tone, center, path: annularSegment(i, count), premium: isPremiumPrize(prize) }
       }),
-    [prizes, count, segmentAngle],
+    [prizes, count, segmentAngle, tones],
   )
 
   const studs = useMemo(() => {
     return Array.from({ length: STUD_COUNT }, (_, k) => {
       const deg = (360 / STUD_COUNT) * k
-      const p = polar(CX, CY, RIM_OUTER - 1.5, deg)
+      const p = polar(CX, CY, RIM_OUTER - 2, deg)
       return { ...p, key: k }
     })
   }, [])
 
+  const lastTickRef = useRef(Math.floor(rotation / segmentAngle))
+  const [pointerFlick, setPointerFlick] = useState(false)
+
+  useEffect(() => {
+    if (!pointerActive) return
+    const boundary = Math.floor(rotation / segmentAngle)
+    if (boundary !== lastTickRef.current) {
+      lastTickRef.current = boundary
+      setPointerFlick(true)
+      const t = window.setTimeout(() => setPointerFlick(false), 90)
+      return () => window.clearTimeout(t)
+    }
+  }, [rotation, segmentAngle, pointerActive])
+
   return (
     <div className="wheel-stage mx-auto">
-      <div className="wheel-glow pointer-events-none absolute inset-0 rounded-full" aria-hidden />
-      <div className="wheel-sparkle-field pointer-events-none absolute inset-0" aria-hidden>
-        {Array.from({ length: 10 }, (_, i) => (
-          <span key={i} className="wheel-sparkle" style={{ '--i': i } as CSSProperties} />
-        ))}
-      </div>
-      <div className="wheel-rim-sweep pointer-events-none absolute inset-0 rounded-full" aria-hidden />
+      <div className="wheel-drop-shadow pointer-events-none absolute inset-0" aria-hidden />
 
       <div
-        className={`wheel-pointer pointer-events-none absolute left-1/2 z-30 -translate-x-1/2${pointerActive ? ' wheel-pointer--active' : ''}`}
+        className={`wheel-pointer pointer-events-none absolute left-1/2 z-30 -translate-x-1/2${pointerActive ? ' wheel-pointer--active' : ''}${pointerFlick ? ' wheel-pointer--flick' : ''}`}
         aria-hidden
       >
-        <svg
-          viewBox="0 0 32 44"
-          className="h-auto w-full drop-shadow-[0_4px_14px_rgba(26,22,18,0.35)]"
-        >
+        <svg viewBox="0 0 34 48" className="h-auto w-full">
           <defs>
-            <linearGradient id="wheelPointerGold" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#f3e9d2" />
-              <stop offset="35%" stopColor="#e8d4a0" />
-              <stop offset="100%" stopColor="#b8944f" />
+            <linearGradient id="mareaPointerGold" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#F3E9D2" />
+              <stop offset="45%" stopColor="#D4B97A" />
+              <stop offset="100%" stopColor="#8C6B2E" />
             </linearGradient>
-            <radialGradient id="wheelPointerGem" cx="50%" cy="22%" r="40%">
-              <stop offset="0%" stopColor="#fffef8" />
-              <stop offset="55%" stopColor="#d4b97a" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="#9a7b3c" stopOpacity="0" />
+            <radialGradient id="mareaPointerGem" cx="50%" cy="30%" r="45%">
+              <stop offset="0%" stopColor="#1A1612" />
+              <stop offset="55%" stopColor="#2A2420" />
+              <stop offset="100%" stopColor="#1A1612" />
             </radialGradient>
           </defs>
           <path
-            d="M16 2 L30 38 Q16 34 2 38 Z"
-            fill="url(#wheelPointerGold)"
-            stroke="#c9a962"
-            strokeWidth="0.75"
-            strokeOpacity="0.65"
+            d="M17 1 L31 42 Q17 37 3 42 Z"
+            fill="url(#mareaPointerGold)"
+            stroke="#B8924A"
+            strokeWidth="0.6"
           />
-          <path d="M16 10 L22 20 L16 28 L10 20 Z" fill="url(#wheelPointerGem)" opacity="0.95" />
+          <ellipse cx="17" cy="14" rx="5" ry="4" fill="url(#mareaPointerGem)" />
+          <ellipse cx="15.5" cy="12.5" rx="1.4" ry="1" fill="#FFFFFF" opacity="0.85" />
         </svg>
       </div>
 
       <div
-        className={`wheel-spin relative mx-auto aspect-square w-full will-change-transform${spinning ? ' wheel-spin--active' : ''}${preSpinning ? ' wheel-spin--pre' : ''}`}
-        style={{
-          transform: `rotate(${rotation}deg)`,
-          transition:
-            spinning && !preSpinning ? `transform ${spinDurationMs}ms ${WHEEL_SPIN_EASING}` : 'none',
-        }}
+        className={`wheel-spin relative mx-auto aspect-square w-full will-change-transform${spinning ? ' wheel-spin--active' : ''}`}
+        style={{ transform: `rotate(${rotation}deg)` }}
       >
-        <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="wheel-svg h-full w-full" role="img" aria-label="Lucky wheel">
+        <svg
+          viewBox="-250 -250 500 500"
+          className="wheel-svg h-full w-full"
+          role="img"
+          aria-label="Prize wheel with segments for discounts and gifts"
+        >
           <defs>
-            <linearGradient id="segGold" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#f0e2c4" />
-              <stop offset="28%" stopColor="#d4b97a" />
-              <stop offset="55%" stopColor="#c4a86a" />
-              <stop offset="82%" stopColor="#e8d4a8" />
-              <stop offset="100%" stopColor="#a88945" />
+            <linearGradient id="rimPolish" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#8C6B2E" />
+              <stop offset="22%" stopColor="#F3E9D2" />
+              <stop offset="50%" stopColor="#D4B97A" />
+              <stop offset="78%" stopColor="#B8924A" />
+              <stop offset="100%" stopColor="#8C6B2E" />
             </linearGradient>
-            <linearGradient id="segGoldSheen" x1="20%" y1="0%" x2="80%" y2="100%">
-              <stop offset="0%" stopColor="#fff8ec" stopOpacity="0.55" />
-              <stop offset="50%" stopColor="#d4b97a" stopOpacity="0" />
-              <stop offset="100%" stopColor="#1a1612" stopOpacity="0.08" />
-            </linearGradient>
-            <linearGradient id="segPearl" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#faf6ee" />
-              <stop offset="50%" stopColor="#f3e9d2" />
-              <stop offset="100%" stopColor="#e5d9c0" />
-            </linearGradient>
-            <linearGradient id="segOnyx" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#2a2420" />
-              <stop offset="45%" stopColor="#1a1612" />
-              <stop offset="100%" stopColor="#12100e" />
-            </linearGradient>
-            <linearGradient id="rimGoldPolish" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#b8944f" />
-              <stop offset="25%" stopColor="#f3e9d2" />
-              <stop offset="50%" stopColor="#d4b97a" />
-              <stop offset="75%" stopColor="#c4a86a" />
-              <stop offset="100%" stopColor="#9a7b3c" />
-            </linearGradient>
-            <filter id="dividerShadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="0.5" stdDeviation="0.4" floodColor="#1a1612" floodOpacity="0.35" />
+            <radialGradient id="studGem" cx="35%" cy="30%" r="65%">
+              <stop offset="0%" stopColor="#FFFFFF" />
+              <stop offset="40%" stopColor="#F3E9D2" />
+              <stop offset="100%" stopColor="#B8924A" />
+            </radialGradient>
+            <filter id="wheelDropShadow" x="-40%" y="-40%" width="180%" height="180%">
+              <feDropShadow dx="0" dy="10" stdDeviation="12" floodColor="#1A1612" floodOpacity="0.28" />
             </filter>
-            <filter id="winSegmentGlow" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
+            <filter id="winGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="4" result="b" />
               <feMerge>
-                <feMergeNode in="blur" />
+                <feMergeNode in="b" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
+            {segments.map(({ i, center, tone }) => {
+              const stops =
+                tone === 'gold'
+                  ? [
+                      ['0%', '#F3E9D2'],
+                      ['55%', '#D4B97A'],
+                      ['100%', '#B8924A'],
+                    ]
+                  : tone === 'pearl'
+                    ? [
+                        ['0%', '#FBF7EE'],
+                        ['50%', '#F3E9D2'],
+                        ['100%', '#C9B896'],
+                      ]
+                    : [
+                        ['0%', '#2E2824'],
+                        ['50%', '#1A1612'],
+                        ['100%', '#0E0C0A'],
+                      ]
+              return (
+                <radialGradient
+                  key={`g-${i}`}
+                  id={`segGrad-${i}`}
+                  gradientUnits="userSpaceOnUse"
+                  cx={center.x}
+                  cy={center.y}
+                  r={OUTER_R - 10}
+                >
+                  {stops.map(([offset, color]) => (
+                    <stop key={offset} offset={offset} stopColor={color} />
+                  ))}
+                </radialGradient>
+              )
+            })}
           </defs>
 
-          <circle cx={CX} cy={CY} r={RIM_OUTER} fill="#0e0c0a" />
-          <circle
-            cx={CX}
-            cy={CY}
-            r={RIM_OUTER}
-            fill="none"
-            stroke="url(#rimGoldPolish)"
-            strokeWidth="5.5"
-          />
-          <circle
-            cx={CX}
-            cy={CY}
-            r={OUTER_R + 3.5}
-            fill="none"
-            stroke="#1a1612"
-            strokeWidth="2.25"
-            opacity="0.92"
-          />
-          <circle
-            cx={CX}
-            cy={CY}
-            r={OUTER_R + 2}
-            fill="none"
-            stroke="#d4b97a"
-            strokeWidth="0.4"
-            opacity="0.35"
-          />
+          <g filter="url(#wheelDropShadow)">
+            <circle cx={CX} cy={CY} r={RIM_OUTER + 2} fill="#1A1612" opacity="0.06" />
 
-          {studs.map((s) => (
-            <g key={s.key}>
-              <circle cx={s.x} cy={s.y} r="3.2" fill="#1a1612" opacity="0.5" />
+            <circle cx={CX} cy={CY} r={RIM_OUTER} fill="none" stroke="url(#rimPolish)" strokeWidth="7" />
+            <circle cx={CX} cy={CY} r={OUTER_R + 6} fill="none" stroke="#1A1612" strokeWidth="2.2" />
+            <circle cx={CX} cy={CY} r={OUTER_R + 3.5} fill="none" stroke="url(#rimPolish)" strokeWidth="1.4" opacity="0.85" />
+            <circle cx={CX} cy={CY} r={OUTER_R + 1} fill="none" stroke="#1A1612" strokeWidth="1.8" />
+
+            {studs.map((s) => (
               <circle
+                key={s.key}
                 cx={s.x}
                 cy={s.y}
-                r="2.1"
-                fill="#e8d4a8"
-                stroke="#d4b97a"
-                strokeWidth="0.4"
-                className="wheel-stud"
+                r="3.25"
+                fill="url(#studGem)"
+                stroke="#D4B97A"
+                strokeWidth="0.35"
+                className="wheel-stud-twinkle"
+                style={{ '--stud-i': s.key } as CSSProperties}
               />
-            </g>
-          ))}
+            ))}
 
-          {segments.map(({ prize, i, path, tone }) => {
-            const isWinner = highlightIndex === i
-            const fillId =
-              tone === 'gold' ? 'url(#segGold)' : tone === 'pearl' ? 'url(#segPearl)' : 'url(#segOnyx)'
-            return (
-              <g key={prize.id} className={isWinner ? 'wheel-segment-win' : undefined}>
-                <path
-                  d={path}
-                  fill={fillId}
-                  stroke="#c9a962"
+            {segments.map(({ prize, i, path, tone, center, premium }) => {
+              const isWinner = highlightIndex === i
+              return (
+                <g key={prize.id} className={isWinner ? 'wheel-segment-win' : undefined}>
+                  <path
+                    d={path}
+                    fill={`url(#segGrad-${i})`}
+                    stroke="#E8D4A8"
+                    strokeWidth="0.55"
+                    strokeOpacity="0.45"
+                    filter={isWinner ? 'url(#winGlow)' : undefined}
+                  />
+                  {premium && tone === 'onyx' && (
+                    <path
+                      d={`M ${center.x} ${center.y - 14} L ${center.x + 6} ${center.y} L ${center.x} ${center.y + 14} L ${center.x - 6} ${center.y} Z`}
+                      fill="#D4B97A"
+                      opacity="0.85"
+                    />
+                  )}
+                </g>
+              )
+            })}
+
+            {prizes.map((_, i) => {
+              const a = i * segmentAngle
+              const p1 = polar(CX, CY, INNER_R + 1, a)
+              const p2 = polar(CX, CY, OUTER_R - 2, a)
+              return (
+                <line
+                  key={`divider-${i}`}
+                  x1={p1.x}
+                  y1={p1.y}
+                  x2={p2.x}
+                  y2={p2.y}
+                  stroke="#E8D4A8"
                   strokeWidth="0.65"
-                  strokeOpacity={isWinner ? 0.85 : 0.4}
-                  filter={isWinner ? 'url(#winSegmentGlow)' : undefined}
+                  strokeOpacity="0.7"
                 />
-                {tone === 'gold' && (
-                  <path d={path} fill="url(#segGoldSheen)" stroke="none" pointerEvents="none" opacity="0.85" />
-                )}
-              </g>
-            )
-          })}
+              )
+            })}
 
-          {prizes.map((_, i) => {
-            const a = i * segmentAngle
-            const p1 = polar(CX, CY, INNER_R + 2, a)
-            const p2 = polar(CX, CY, OUTER_R - 1, a)
-            return (
-              <line
-                key={`spoke-${i}`}
-                x1={p1.x}
-                y1={p1.y}
-                x2={p2.x}
-                y2={p2.y}
-                stroke="#c9a962"
-                strokeWidth="0.75"
-                strokeOpacity="0.55"
-                filter="url(#dividerShadow)"
-              />
-            )
-          })}
+            <ellipse
+              cx={CX - 40}
+              cy={CY - 50}
+              rx={OUTER_R * 0.85}
+              ry={OUTER_R * 0.35}
+              fill="#FFFFFF"
+              opacity="0.07"
+              transform="rotate(-28)"
+              className="wheel-face-glare"
+            />
 
-          {segments.map(({ prize, mid, labelPos, tone, i }) => (
-            <text
-              key={`label-${prize.id}`}
-              x={labelPos.x}
-              y={labelPos.y}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              transform={`rotate(${mid}, ${labelPos.x}, ${labelPos.y})`}
-              className={`wheel-segment-label select-none${highlightIndex === i ? ' wheel-segment-label--win' : ''}`}
-              fill={labelFill(tone, highlightIndex === i)}
-            >
-              {shortLabel(prize.name)}
-            </text>
-          ))}
+            {segments.map(({ prize, mid, labelPos, tone, i }) => {
+              const pct = labelIsPercent(prize.name)
+              return (
+                <text
+                  key={`label-${prize.id}`}
+                  x={labelPos.x}
+                  y={labelPos.y}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  transform={`rotate(${mid}, ${labelPos.x}, ${labelPos.y})`}
+                  className={`wheel-segment-label select-none${pct ? ' wheel-segment-label--pct' : ' wheel-segment-label--word'}${highlightIndex === i ? ' wheel-segment-label--win' : ''}`}
+                  fill={labelFill(tone)}
+                >
+                  {shortLabel(prize.name)}
+                </text>
+              )
+            })}
+          </g>
         </svg>
       </div>
 
       <div className="wheel-hub-medallion pointer-events-none absolute left-1/2 top-1/2 z-[15] -translate-x-1/2 -translate-y-1/2" aria-hidden>
-        <svg viewBox="0 0 88 88" className="h-full w-full">
-          <defs>
-            <linearGradient id="hubGold" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#f3e9d2" />
-              <stop offset="40%" stopColor="#d4b97a" />
-              <stop offset="100%" stopColor="#9a7b3c" />
-            </linearGradient>
-          </defs>
-          <circle cx="44" cy="44" r="42" fill="#1a1612" opacity="0.12" />
-          <circle
-            cx="44"
-            cy="44"
-            r="40"
-            fill="url(#hubGold)"
-            stroke="#c9a962"
-            strokeWidth="1.2"
-          />
-          <circle cx="44" cy="44" r="36" fill="none" stroke="#f3e9d2" strokeWidth="0.5" opacity="0.5" />
-          <text
-            x="44"
-            y="48"
-            textAnchor="middle"
-            className="wheel-hub-monogram"
-            fill="#1a1612"
-          >
+        <svg viewBox="0 0 96 96" className="h-full w-full">
+          <circle cx="48" cy="48" r="46" fill="none" stroke="#1A1612" strokeWidth="3" />
+          <circle cx="48" cy="48" r="42" fill="url(#rimPolish)" stroke="#B8924A" strokeWidth="1.2" />
+          <circle cx="48" cy="48" r="38" fill="#FBF7EE" />
+          <circle cx="48" cy="48" r="34" fill="none" stroke="#D4B97A" strokeWidth="0.65" opacity="0.9" />
+          <text x="48" y="54" textAnchor="middle" className="wheel-hub-monogram" fill="#B8924A">
             M
           </text>
         </svg>

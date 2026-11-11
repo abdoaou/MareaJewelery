@@ -391,7 +391,8 @@
   "wheel": {
     "label": "Exclusive offer",
     "title": "Spin & Win",
-    "subtitle": "One spin per visitor — tap GO to play.",
+    "subtitle": "One spin, one gift from Maréa.",
+    "tryAgainHint": "So close — thank you for playing with Maréa.",
     "spin": "Spin the Wheel",
     "spinning": "Spinning",
     "close": "Close wheel",
