@@ -277,4 +277,9 @@ export const wheelApi = {
     const q = new URLSearchParams(params).toString()
     return api<WheelSpinRow[]>(`/wheel/admin/spins${q ? `?${q}` : ''}`)
   },
+  resetSpin: (id: string) =>
+    api<{ id: string; deleted: boolean; userId?: string | null; sessionId?: string | null }>(
+      `/wheel/admin/spins/${id}`,
+      { method: 'DELETE' },
+    ),
 }

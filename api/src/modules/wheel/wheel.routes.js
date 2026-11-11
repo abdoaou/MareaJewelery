@@ -16,5 +16,6 @@ router.post('/admin/prizes', wheelController.adminCreatePrize)
 router.patch('/admin/prizes/:id', wheelController.adminUpdatePrize)
 router.delete('/admin/prizes/:id', wheelController.adminDeletePrize)
 router.get('/admin/spins', wheelController.adminListSpins)
+router.delete('/admin/spins/:id', wheelController.adminDeleteSpin)
 
 export default router

@@ -69,4 +69,9 @@ export const wheelController = {
       meta: { total: data.total, page: data.page, limit: data.limit, totalPages: data.totalPages },
     })
   }),
+
+  adminDeleteSpin: asyncHandler(async (req, res) => {
+    const data = await wheelService.adminDeleteSpin(req.params.id)
+    return success(res, { data, message: 'Spin reset — user can spin again' })
+  }),
 }

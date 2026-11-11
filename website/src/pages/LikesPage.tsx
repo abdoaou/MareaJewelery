@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Heart } from 'lucide-react'
+import { Heart, ShoppingBag } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useWishlistStore } from '../store/wishlistStore'
+import { useCartStore } from '../store/cartStore'
 import { formatPrice } from '../utils/formatPrice'
 import { getErrorMessage } from '../utils/errorMessage'
 import LoadingAnimation from '../components/LoadingAnimation'
@@ -14,8 +15,10 @@ export default function LikesPage() {
   const { customer } = useAuth()
   const navigate = useNavigate()
   const { items, sync, toggle, loaded } = useWishlistStore()
+  const addToApi = useCartStore((s) => s.addToApi)
   const [error, setError] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
+  const [addingId, setAddingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!customer) {
@@ -47,6 +50,18 @@ export default function LikesPage() {
     )
   }
 
+  async function handleAddToCart(productId: string) {
+    if (addingId) return
+    setAddingId(productId)
+    try {
+      await addToApi(productId)
+    } catch {
+      /* api toast */
+    } finally {
+      setAddingId(null)
+    }
+  }
+
   if (!items.length) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-24 text-center">
@@ -68,34 +83,56 @@ export default function LikesPage() {
       <div className="mt-8 space-y-4">
         {items.map((item) => {
           const price = Number(item.product.salePrice ?? item.product.price)
+          const detailPath = `/product/${item.product.slug}`
+          const isAdding = addingId === item.productId
+
           return (
             <div
               key={item.id}
-              className="flex items-center gap-4 rounded-xl border border-marea-border bg-marea-bg-card p-4"
+              className="flex flex-col gap-3 rounded-xl border border-marea-border bg-marea-bg-card p-4 sm:flex-row sm:items-center sm:gap-4"
             >
-              {item.product.image ? (
-                <img
-                  src={item.product.image}
-                  alt={item.product.name}
-                  className="h-20 w-20 rounded-lg object-cover"
-                />
-              ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-marea-bg-soft">
-                  <Heart size={20} className="text-marea-muted" />
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-marea-cream">{item.product.name}</p>
-                <p className="price-en mt-1 text-marea-gold">{formatPrice(price)}</p>
-              </div>
-              <button
-                type="button"
-                className="rounded-full border border-marea-border p-2 text-marea-gold hover:border-marea-gold"
-                onClick={() => toggle(item.productId).catch(() => {})}
-                aria-label={t('likes.unlike')}
+              <Link
+                to={detailPath}
+                className="flex min-w-0 flex-1 items-center gap-4 transition hover:opacity-90"
               >
-                <Heart size={18} className="fill-marea-gold" />
-              </button>
+                {item.product.image ? (
+                  <img
+                    src={item.product.image}
+                    alt={item.product.name}
+                    className="h-20 w-20 shrink-0 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-marea-bg-soft">
+                    <Heart size={20} className="text-marea-muted" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-marea-cream transition-colors hover:text-marea-gold">
+                    {item.product.name}
+                  </p>
+                  <p className="price-en mt-1 text-marea-gold">{formatPrice(price)}</p>
+                </div>
+              </Link>
+
+              <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-stretch lg:flex-row">
+                <button
+                  type="button"
+                  disabled={isAdding}
+                  onClick={() => void handleAddToCart(item.productId)}
+                  className="btn-secondary flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm disabled:opacity-50 sm:flex-initial"
+                >
+                  <ShoppingBag size={16} />
+                  {isAdding ? t('common.loading') : t('cart.addToCart')}
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full border border-marea-border p-2.5 text-marea-gold transition hover:border-marea-gold sm:self-center"
+                  onClick={() => toggle(item.productId).catch(() => {})}
+                  aria-label={t('likes.unlike')}
+                >
+                  <Heart size={18} className="fill-marea-gold" />
+                </button>
+              </div>
             </div>
           )
         })}

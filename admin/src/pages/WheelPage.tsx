@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2, Gift } from 'lucide-react'
+import { Plus, Pencil, Trash2, Gift, RotateCcw } from 'lucide-react'
 import { wheelApi, type WheelPrize, type WheelSpinRow, type WheelStats } from '../services/api'
 import { Modal } from '../components/ui/Modal'
 import { EmptyState, Skeleton } from '../components/ui/EmptyState'
@@ -29,6 +29,7 @@ export function WheelPage() {
   const [modal, setModal] = useState(false)
   const [form, setForm] = useState(emptyPrize)
   const [editId, setEditId] = useState<string | null>(null)
+  const [resettingId, setResettingId] = useState<string | null>(null)
 
   async function loadStats() {
     const res = await wheelApi.stats()
@@ -111,6 +112,28 @@ export function WheelPage() {
       setError(err instanceof Error ? err.message : 'Save failed')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function resetSpin(row: WheelSpinRow) {
+    const who = row.user?.email || (row.sessionId ? `guest session ${row.sessionId.slice(0, 8)}…` : 'this visitor')
+    if (
+      !confirm(
+        `Reset wheel for ${who}?\n\nThey will be able to spin again. Unused coupon (if any) will be removed.`,
+      )
+    ) {
+      return
+    }
+    setResettingId(row.id)
+    setError('')
+    try {
+      await wheelApi.resetSpin(row.id)
+      await loadSpins()
+      await loadStats()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not reset spin')
+    } finally {
+      setResettingId(null)
     }
   }
 
@@ -221,6 +244,7 @@ export function WheelPage() {
 
       {tab === 'spins' && (
         <>
+          {error && <p className="text-sm text-red-400">{error}</p>}
           <select
             value={spinFilter}
             onChange={(e) => setSpinFilter(e.target.value)}
@@ -246,6 +270,7 @@ export function WheelPage() {
                     <th className="px-4 py-3">Coupon</th>
                     <th className="px-4 py-3">Claimed</th>
                     <th className="px-4 py-3">Used</th>
+                    <th className="px-4 py-3">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -257,6 +282,18 @@ export function WheelPage() {
                       <td className="px-4 py-3 font-mono text-xs">{s.couponCode || '—'}</td>
                       <td className="px-4 py-3">{s.claimedAt ? 'Yes' : 'No'}</td>
                       <td className="px-4 py-3">{s.usedAt ? 'Yes' : 'No'}</td>
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          disabled={Boolean(s.usedAt) || resettingId === s.id}
+                          title={s.usedAt ? 'Coupon already used on an order' : 'Allow spin again'}
+                          onClick={() => void resetSpin(s)}
+                          className="btn-ghost flex items-center gap-1 px-2 py-1 text-xs text-gold disabled:opacity-40"
+                        >
+                          <RotateCcw size={14} />
+                          {resettingId === s.id ? 'Resetting…' : 'Reset spin'}
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -457,4 +457,33 @@ export const wheelService = {
 
     return { items, total, page, limit, totalPages: Math.ceil(total / limit) }
   },
+
+  /** Remove a spin so the user or guest session can play the wheel again. */
+  async adminDeleteSpin(id) {
+    const spin = await prisma.wheelSpin.findUnique({
+      where: { id },
+      include: { coupon: true },
+    })
+    if (!spin) throw new NotFoundError('Spin')
+    if (spin.usedAt) {
+      throw new ValidationError('This spin’s coupon was already used on an order and cannot be reset')
+    }
+
+    await prisma.$transaction(async (tx) => {
+      if (spin.couponId && spin.coupon) {
+        if (spin.coupon.usedCount > 0) {
+          throw new ValidationError('Linked coupon was already redeemed — cannot reset this spin')
+        }
+        await tx.coupon.delete({ where: { id: spin.couponId } })
+      }
+      await tx.wheelSpin.delete({ where: { id } })
+    })
+
+    return {
+      id,
+      deleted: true,
+      userId: spin.userId,
+      sessionId: spin.sessionId,
+    }
+  },
 }
